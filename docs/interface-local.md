@@ -34,7 +34,7 @@ O botão Executar comparação envia uma única solicitação à fila. A tela ac
 
 Quando as duas condições estiverem completas, confira as métricas e as contagens. O gráfico e a tabela usam as mesmas palavras de bits e a mesma ordem. As barras representam probabilidades de 0% a 100%. A tabela mostra também os resultados de contagem zero. A taxa de resultados esperados usa o conjunto previsto na teoria ideal do circuito. A TVD mede a distância entre a distribuição observada e essa referência.
 
-Baixar pacote ZIP entrega o mesmo pacote científico da API. Repetir configuração cria outro trabalho com a mesma semente. Testar outra semente cria outro trabalho com uma semente diferente. O trabalho original continua no histórico.
+Baixar pacote ZIP entrega o mesmo pacote científico da API. Baixar licença e avisos entrega um ZIP separado com Apache 2.0, NOTICE e escopo, para acompanhar o código da cápsula em uma redistribuição. Repetir configuração cria outro trabalho com a mesma semente. Testar outra semente cria outro trabalho com uma semente diferente. O trabalho original continua no histórico.
 
 **Leitura dos resultados** explica a comparação em português e inclui links para os fatos que sustentam cada observação. Abra **Conferir as evidências** para ver valores, unidades, origem e hash. Os botões Markdown e JSON baixam o mesmo relatório exibido. O resumo local dispensa IA. O [guia do relator](relatorios-locais.md) descreve a opção de organizar as observações com um modelo local.
 

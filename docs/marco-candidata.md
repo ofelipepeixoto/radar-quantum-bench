@@ -1,5 +1,7 @@
 # Preparação da candidata para o piloto
 
+Registro histórico desta etapa. A licença pública e a política de desenvolvimento foram atualizadas no [marco das duas edições](marco-open-core.md). O [panorama atual](panorama-do-projeto.md) reúne os aceites restantes e o adiamento das sessões.
+
 Esta entrega parte da main `e9d9ab53d48657fe3612bfc43a829d949c50b141`. O objetivo é reunir uma candidata verificável do MVP local e avançar os controles operacionais. O pacote conserva o perfil `review-candidate`. O aceite do piloto continua pendente.
 
 ## Limites e recuperação

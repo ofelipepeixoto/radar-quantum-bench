@@ -18,6 +18,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from .bundle import build_bundle
 from .experiment import _unique_fields, validate
 from .metrics import specifications
+from .licensing import notice_files, write_notice_bundle
 from .report import report_to_markdown
 from .report_service import ReportBusy, Reports
 from .store import Conflict, InvalidState, NotFound, QueueFull, Store
@@ -119,6 +120,32 @@ def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None,
              "base_seed": _DEFAULT_SEEDS[circuit], **specifications(circuit)}
             for circuit in _DEFAULT_SEEDS
         ]
+
+    @app.get("/api/v1/licencas")
+    def public_notices():
+        try:
+            files = notice_files(Path(__file__).resolve().parents[1])
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            raise HTTPException(409, "Os avisos públicos requerem revisão.") from exc
+        return {"license": "Apache-2.0", "files": {name: sha256(data).hexdigest()
+                for name, data in sorted(files.items())}}
+
+    @app.get("/api/v1/licencas.zip")
+    def download_notices():
+        try:
+            files = notice_files(Path(__file__).resolve().parents[1])
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            raise HTTPException(409, "Os avisos públicos requerem revisão.") from exc
+        folder = Path(tempfile.mkdtemp(prefix="notices-"))
+        archive = folder / "LICENCAS.zip"
+        try:
+            write_notice_bundle(files, archive)
+        except (ValueError, OSError) as exc:
+            shutil.rmtree(folder)
+            raise HTTPException(503, "Não foi possível preparar os avisos públicos.") from exc
+        return FileResponse(archive, media_type="application/zip",
+                            filename="Radar-Quantum-Bench-LICENCAS.zip",
+                            background=BackgroundTask(shutil.rmtree, folder))
 
     @app.post("/api/v1/comparacoes", status_code=202)
     def submit(body: ComparisonRequest, idempotency_key: IdempotencyKey):

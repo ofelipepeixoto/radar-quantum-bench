@@ -22,6 +22,8 @@ A API conserva a especificação em `/openapi.json`. As páginas que carregariam
 | GET /api/v1/comparacoes/{id}/metricas | Resumo das medições disponíveis, inclusive quando o ensaio estiver incompleto |
 | POST /api/v1/comparacoes/{id}/retentativas | Devolve um trabalho com falha à fila. A próxima execução preserva os checkpoints válidos. |
 | GET /api/v1/comparacoes/{id}/exportacao | ZIP científico com código, testes, versões, medições e guia. Exige conclusão do trabalho e do resultado. |
+| GET /api/v1/licencas | Identificação Apache 2.0 e hashes dos avisos públicos |
+| GET /api/v1/licencas.zip | Licença, NOTICE, escopo e avisos de terceiros para acompanhar a cápsula científica |
 | GET /api/v1/relator | Indica se a instalação habilitou o modelo opcional. Não consulta o modelo. |
 | GET /api/v1/comparacoes/{id}/relatorio | Relatório com fatos e evidências do checkpoint disponível. Não consulta o modelo. |
 | POST /api/v1/comparacoes/{id}/relatorio | Solicita a organização pelo modelo habilitado. Exige conclusão. Reutiliza uma seleção já aprovada para os mesmos dados e modelo. |
@@ -69,4 +71,4 @@ Antes de atualizar o software, encerre os processos e guarde a cópia. Use a ver
 
 Use um diretório por instalação local e mantenha a API em loopback. A aplicação restringe Host e confere a origem apresentada pelo navegador. Esta edição pressupõe usuários autorizados no próprio computador. A modalidade compartilhada entre instituições terá autenticação e autorização por recurso como marco próprio.
 
-O banco e os checkpoints ficam fora do controle de versão por padrão em `local-data`. Os ZIPs exportados pela API são cápsulas científicas. Para operar a fila e a API, use os módulos adicionais do repositório e `requirements-api.txt`. A [interface em português](interface-local.md) já consome este contrato HTTP na mesma origem. O servidor a disponibiliza quando encontra o build em web/dist ao iniciar.
+O banco e os checkpoints ficam fora do controle de versão por padrão em `local-data`. Os ZIPs exportados pela API são cápsulas científicas. Ao redistribuir código próprio dessas cápsulas, acompanhe o download separado de licença e avisos disponível em `/api/v1/licencas.zip`. A interface oferece esse botão junto ao pacote científico. Os bytes e o verificador da cápsula permanecem compatíveis. Para operar a fila e a API, use os módulos adicionais do repositório e `requirements-api.txt`. A [interface em português](interface-local.md) já consome este contrato HTTP na mesma origem. O servidor a disponibiliza quando encontra o build em web/dist ao iniciar.

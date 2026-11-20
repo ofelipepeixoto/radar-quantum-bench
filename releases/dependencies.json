@@ -3169,7 +3169,7 @@
       "version": "2.0.4"
     }
   ],
-  "own_code_license": "pending-owner-decision",
+  "own_code_license": "Apache-2.0",
   "python": [
     {
       "license_classifiers": [],

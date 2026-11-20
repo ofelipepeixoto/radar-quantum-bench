@@ -163,6 +163,13 @@ test('teclado, medição Bell real, histórico e exportação do mesmo resultado
   expect(downloaded.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 3, 4]));
   const digest = (b: Buffer) => createHash('sha256').update(b).digest('hex');
   expect(digest(downloaded)).toBe(digest(await source.body()));
+  const noticeDownloadStart = page.waitForEvent('download');
+  await page.locator('#license-download').click();
+  const notices = await noticeDownloadStart;
+  expect(notices.suggestedFilename()).toBe('Radar-Quantum-Bench-LICENCAS.zip');
+  const noticeSource = await page.request.get('/api/v1/licencas.zip');
+  expect(noticeSource.status()).toBe(200);
+  expect(digest(await readFile((await notices.path())!))).toBe(digest(await noticeSource.body()));
   expect(remoteRequests).toEqual([]);
 });
 

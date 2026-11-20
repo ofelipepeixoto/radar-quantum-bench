@@ -18,6 +18,6 @@ As licenças de dependências de teste, como MPL-2.0 do Axe e do Certifi, contin
 
 ## Código próprio e decisão de distribuição
 
-A licença do código próprio ainda depende de uma decisão do titular. Este arquivo registra componentes e preserva atribuições de terceiros. Ele não concede uma licença ao código do Radar e não declara a candidata apta para distribuição do piloto. O manifesto mantém essa pendência explícita. A preparação técnica, os testes e a revisão do pacote podem prosseguir enquanto essa decisão é registrada.
+O código e as porções próprias da edição pública estão sob Apache License 2.0, com os caminhos classificados em [LICENSE-SCOPE.json](LICENSE-SCOPE.json) e a atribuição em [NOTICE](NOTICE). As dependências, arquivos de fontes e declarações CSS de terceiros mantêm suas condições e avisos, inclusive OFL. O manifesto registra a licença conferida e os aceites humanos pendentes. A licença não aprova o piloto ou uma oferta empresarial.
 
 Para conferir o inventário no ambiente Python travado, execute na raiz `python tools/inventory_dependencies.py --check`. Para atualizar depois de uma mudança deliberada de dependências, execute o mesmo comando sem `--check`, revise as diferenças e gere uma nova candidata.

@@ -151,7 +151,8 @@ def provenance():
                 "manifest_sha256": None, "content_matches_manifest": False}
     raw = path.read_bytes()
     manifest = json.loads(raw)
-    require(manifest["schema"] == "rqb-review-candidate/1", "manifesto_incompativel")
+    require(manifest["schema"] in ("rqb-review-candidate/1", "rqb-review-candidate/2"),
+            "manifesto_incompativel")
     require(re.fullmatch(r"[0-9a-f]{40}", manifest["source_revision"]) is not None,
             "revisao_manifesto_invalida")
     require(isinstance(manifest["files"], dict) and 0 < len(manifest["files"]) <= 4096,

@@ -1,0 +1,21 @@
+Radar Quantum Bench
+Public scientific core and portfolio edition
+Copyright 2026 Carlos Felipe (@ofelipepeixoto)
+
+Project-owned code, documentation, examples and project-owned portions of
+generated interface files identified in LICENSE-SCOPE.json are offered under the
+Apache License, Version 2.0. A copy accompanies this distribution in LICENSE.
+
+The unchanged historical scientific archives identified in LICENSE-SCOPE.json
+retain their original bytes and scientific manifests. This accompanying
+license and notice apply to the project-owned code inside those archives.
+Recipients who redistribute that code must preserve the applicable license
+and notices. Third-party components retain their own terms.
+
+Font software and its original notices remain under the licenses identified
+in THIRD_PARTY_NOTICES.md. Dependency metadata references external packages
+and does not relicense those packages.
+
+This public distribution does not include separately developed commercial
+components, laboratory data or credentials. Its license does not grant
+rights to components absent from the classified public distribution.

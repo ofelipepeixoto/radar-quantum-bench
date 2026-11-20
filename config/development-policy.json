@@ -1,0 +1,6 @@
+{
+  "schema": "rqb-development-policy/1",
+  "buyer_validation": "deferred_by_owner",
+  "integrations": "local_free_only",
+  "paid_execution": false
+}

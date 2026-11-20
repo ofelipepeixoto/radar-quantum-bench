@@ -1,6 +1,6 @@
 # Registrar o piloto com evidências
 
-O registro local reúne os testes da candidata e as observações feitas pelas pessoas. Cada evidência se liga ao SHA-256 do ZIP e à revisão de origem. Uma candidata nova exige um registro novo. O registro começa vazio, com zero sessões e os aceites humanos pendentes.
+O registro local reúne os testes da candidata e as observações feitas pelas pessoas. Cada evidência se liga ao SHA-256 do ZIP e à revisão de origem. Uma candidata nova exige um registro novo. O registro começa vazio, com zero sessões e os aceites humanos pendentes. A validação com comprador está adiada por decisão do titular. A candidata nova registra a licença Apache 2.0 conferida, sem converter essa conferência em aprovação humana ou comercial.
 
 Os arquivos e anexos ficam em `local-data/acceptance`, fora do controle de versão por padrão. Os templates públicos em `pilot` têm campos vazios. Os comandos recusam campos desconhecidos, outra candidata, participante duplicado e anexo cujo hash divirja do declarado. Dentro do projeto, os registros devem ficar em `local-data`. Eles não são enviados ao navegador ou publicados automaticamente.
 
@@ -60,7 +60,7 @@ python -m radar_quantum_bench.acceptance check \
   --attachment local-data/acceptance/evidencia-do-revisor.txt
 ```
 
-A base do registro é `recorded_human_attestation`. Receber um arquivo não comprova a identidade do revisor nem substitui seu trabalho. Uma verificação pode ter mais de um registro, preservando o histórico. O anexo deve ser uma evidência real da atividade descrita. A [decisão de licença](decisao-de-licenca.md) precisa ser resolvida pelo titular antes da liberação correspondente.
+A base do registro é `recorded_human_attestation`. Receber um arquivo não comprova a identidade do revisor nem substitui seu trabalho. Uma verificação pode ter mais de um registro, preservando o histórico. O anexo deve ser uma evidência real da atividade descrita. A [decisão de licença](decisao-de-licenca.md) foi autorizada para a edição pública. O registro distingue a conferência automática do pacote de uma declaração humana e preserva os resultados de versões antigas.
 
 ## Cinco sessões em dois laboratórios
 
@@ -86,4 +86,4 @@ A segunda rodada possui um registro separado com candidata, laboratório, códig
 python -m radar_quantum_bench.acceptance status --output /tmp/pilot-summary.json
 ```
 
-O resumo omite anexos, códigos individuais de participantes e responsáveis, datas e caminhos privados. A exportação exige um destino fora do repositório, para revisão antes de qualquer publicação. Ele continua indicando a política bloqueada da candidata. Registrar todos os resultados não concede licença nem aprova automaticamente a distribuição ou a conclusão científica.
+O resumo omite anexos, códigos individuais de participantes e responsáveis, datas e caminhos privados. A exportação exige um destino fora do repositório, para revisão antes de qualquer publicação. Ele informa a política da candidata recebida. Para a versão nova, indica licença conferida, aceites humanos pendentes e validação com comprador adiada. Para as antigas, preserva o estado originalmente registrado. Registrar todos os resultados não concede licença nem aprova automaticamente a distribuição ou a conclusão científica.
