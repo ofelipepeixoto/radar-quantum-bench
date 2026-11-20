@@ -13,7 +13,7 @@ from .experiment import validate
 from .metrics import specifications
 
 SCHEMA_VERSION = "rqb-report/1"
-PROMPT_REVISION = "1"
+PROMPT_REVISION = "2"
 CONDITIONS = ("ideal", "readout_2pct")
 LABELS = {"ideal": "Ideal", "readout_2pct": "Erro de leitura de 2% por bit"}
 FALLBACK_REASONS = frozenset(("modelo_indisponivel", "tempo_esgotado", "proposta_invalida",

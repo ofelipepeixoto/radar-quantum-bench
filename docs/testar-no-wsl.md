@@ -118,6 +118,10 @@ O executor aplica por padrão 120 segundos por comparação e 2.048 MiB de memó
 
 **Para atualizar**, pare os dois processos, confira `git status --short --branch` e atualize uma `main` limpa com `git pull --ff-only`. Ative a mesma `.venv`, instale novamente `requirements-api.txt`, repita o passo 4 e reinicie os processos do passo 5 com o diretório de dados original.
 
+## 7. Registrar o ensaio do seu computador
+
+Depois da primeira comparação, siga os comandos de [Registrar o piloto](registro-do-piloto.md). O verificador recebe a candidata e o SHA-256 esperado, confere a instalação, executa os três circuitos em uma cópia temporária e testa a restauração. O recibo registra se este ambiente é WSL. O percurso humano na interface e os testes com leitor de tela têm registros separados.
+
 ## Se algum passo falhar
 
 | O que você vê | O que conferir |

@@ -1,0 +1,30 @@
+{
+  "schema": "rqb-pilot-session/1",
+  "candidate_sha256": null,
+  "source_revision": null,
+  "participant": null,
+  "lab": null,
+  "circuit": "bell",
+  "order": null,
+  "notebook": {
+    "seed_list": "A",
+    "duration_seconds": null,
+    "help_count": null,
+    "export_completed": null
+  },
+  "platform": {
+    "seed_list": "B",
+    "duration_seconds": null,
+    "help_count": null,
+    "export_completed": null
+  },
+  "interpretation": {
+    "observed": null,
+    "theory": null,
+    "limitation": null
+  },
+  "peer_recalculation": null,
+  "observed_on": null,
+  "observer_code": null,
+  "evidence_sha256": null
+}

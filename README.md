@@ -116,10 +116,13 @@ Ao concluir uma comparação, **Leitura dos resultados** apresenta um resumo em 
 
 ## Documentação
 
+O [registro do piloto](docs/registro-do-piloto.md) reúne os comandos para conferir a candidata no computador do operador, testar um modelo local e guardar os aceites e as cinco sessões de forma privada. O protocolo compacto de IA foi exercitado com um modelo real nos três circuitos. [Evidências desta etapa](docs/marco-aceites.md) · [Proposta de licença](docs/decisao-de-licenca.md)
+
 A preparação da candidata acrescenta execução supervisionada com prazo e teto de memória virtual, recibos operacionais e conferência dos arquivos distribuídos. O pacote é destinado à revisão técnica e conserva a pendência de licença própria. [Verificação da candidata](docs/marco-candidata.md) · [Onde estamos e o que falta](docs/panorama-do-projeto.md)
 
 | Para quem quer | Documento |
 | --- | --- |
+| Executar os aceites e registrar o piloto com anexos privados | [Registro e comandos](docs/registro-do-piloto.md) |
 | Ver o andamento do plano e as próximas decisões | [Panorama do projeto](docs/panorama-do-projeto.md) |
 | Preparar e conferir a candidata de revisão | [Pacote, manifesto e inventário](releases/README.md) |
 | Instalar, testar e reabrir a bancada no terminal do PC | [Passo a passo para WSL](docs/testar-no-wsl.md) |
