@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.json.lock
+/resultado-bell.json
+/reproducao-bell.zip
