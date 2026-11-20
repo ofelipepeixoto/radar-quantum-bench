@@ -6,7 +6,7 @@ Uma instalação atende a um laboratório no próprio computador. A API recebe p
 
 Na raiz do repositório, crie e ative um ambiente Python 3.12 em Linux x86_64 ou WSL2 x86_64. Instale com `python -m pip install -r requirements-api.txt`. O arquivo herda as dependências científicas e fixa as adicionais com hashes SHA-256.
 
-Inicie `python -m radar_quantum_bench.local serve --data-dir local-data`. Em outro terminal, com o mesmo ambiente, execute `python -m radar_quantum_bench.local worker --data-dir local-data`. O endereço HTTP é 127.0.0.1 e a porta padrão é 8000. O parâmetro `--port` altera a porta da API. O worker aceita `--once` para processar no máximo um trabalho e encerrar.
+Inicie `python -m radar_quantum_bench.local serve --data-dir local-data`. Em outro terminal, com o mesmo ambiente, execute `python -m radar_quantum_bench.local worker --data-dir local-data`. O endereço HTTP é 127.0.0.1 e a porta padrão é 8000. O parâmetro `--port` altera a porta da API. O worker aceita `--once` para processar no máximo um trabalho e encerrar. O comando roda cada comparação em subprocesso com prazo padrão de 120 segundos e teto de memória virtual de 2.048 MiB. `--timeout-seconds` e `--memory-mib` ajustam esses limites. Os recibos em `executions` ficam separados dos resultados científicos. [Evidências operacionais](marco-candidata.md)
 
 A API conserva a especificação em `/openapi.json`. As páginas que carregariam JavaScript de terceiros estão desabilitadas. Por padrão, o serviço usa o resumo determinístico e o simulador local. O parâmetro opcional `--report-model` habilita consultas explícitas ao Ollama em loopback. A configuração e os limites estão no [guia do relator](relatorios-locais.md). Cada ensaio mantém 1.024 medições por repetição e dez repetições por condição.
 
@@ -59,7 +59,7 @@ A API confere circuito e semente do JSON contra a configuração no SQLite. Ao c
 
 ## Cópia, restauração e atualização
 
-Para esta primeira edição, pare a API e o executor antes de copiar todo o diretório de dados. Preserve `jobs.sqlite3`, os arquivos auxiliares que ainda existirem e as pastas `results` e `reports`. Armazene a cópia em destino privado do laboratório. O lock é liberado pelo sistema operacional. Preserve o arquivo `worker.lock` no diretório e evite removê-lo durante a operação.
+Para esta primeira edição, pare a API e o executor antes de copiar todo o diretório de dados. Preserve `jobs.sqlite3`, os arquivos auxiliares que ainda existirem e as pastas `results`, `reports` e `executions`. Armazene a cópia em destino privado do laboratório. O lock é liberado pelo sistema operacional. Preserve o arquivo `worker.lock` no diretório e evite removê-lo durante a operação.
 
 Restaure a cópia em outra pasta. Inicie a API com essa pasta e consulte uma comparação conhecida. Confira o JSON, a configuração, as contagens e o hash. Depois inicie o executor. Um ensaio local desta entrega confirmou o histórico e o resultado após essa restauração. Uma cópia feita enquanto houver escrita exige um procedimento consistente que também cubra os arquivos de resultados. O SQLite oferece uma API própria de backup para o banco. [Documentação SQLite](https://www.sqlite.org/backup.html)
 

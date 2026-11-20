@@ -104,6 +104,8 @@ source .venv/bin/activate
 python -m radar_quantum_bench.local worker --data-dir "$PWD/local-data"
 ```
 
+O executor aplica por padrão 120 segundos por comparação e 2.048 MiB de memória virtual. O [registro da candidata](marco-candidata.md) explica os ajustes e os recibos operacionais. Se o prazo for excedido, os checkpoints válidos permitem retomar o trabalho.
+
 ## 6. Fazer a primeira comparação
 
 1. No Chrome ou Edge do **Windows**, abra [a bancada em localhost](http://localhost:8000/).

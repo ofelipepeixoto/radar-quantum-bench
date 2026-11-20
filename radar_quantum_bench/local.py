@@ -15,6 +15,10 @@ def main(argv=None):
     worker = commands.add_parser("worker", help="executar a fila em CPU")
     worker.add_argument("--data-dir", type=Path, default=Path("local-data"))
     worker.add_argument("--once", action="store_true", help="processar no máximo um trabalho")
+    worker.add_argument("--timeout-seconds", type=float, default=120,
+                        help="prazo total por comparação em segundos, padrão 120")
+    worker.add_argument("--memory-mib", type=int, default=2048,
+                        help="teto de memória virtual do subprocesso em MiB, padrão 2048")
     args = parser.parse_args(argv)
     try:
         if args.command == "serve":
@@ -30,7 +34,9 @@ def main(argv=None):
             return 0
         from .store import Store
         from .worker import run_worker
-        return run_worker(Store(args.data_dir), once=args.once)
+        from .execution import WorkerLimits
+        limits = WorkerLimits(timeout_seconds=args.timeout_seconds, memory_mib=args.memory_mib)
+        return run_worker(Store(args.data_dir), once=args.once, limits=limits)
     except (ImportError, OSError, ValueError, RuntimeError) as exc:
         print(f"Falha ao iniciar o serviço local: {exc}", file=sys.stderr)
         return 1

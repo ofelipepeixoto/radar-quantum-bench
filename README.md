@@ -116,8 +116,12 @@ Ao concluir uma comparação, **Leitura dos resultados** apresenta um resumo em 
 
 ## Documentação
 
+A preparação da candidata acrescenta execução supervisionada com prazo e teto de memória virtual, recibos operacionais e conferência dos arquivos distribuídos. O pacote é destinado à revisão técnica e conserva a pendência de licença própria. [Verificação da candidata](docs/marco-candidata.md) · [Onde estamos e o que falta](docs/panorama-do-projeto.md)
+
 | Para quem quer | Documento |
 | --- | --- |
+| Ver o andamento do plano e as próximas decisões | [Panorama do projeto](docs/panorama-do-projeto.md) |
+| Preparar e conferir a candidata de revisão | [Pacote, manifesto e inventário](releases/README.md) |
 | Instalar, testar e reabrir a bancada no terminal do PC | [Passo a passo para WSL](docs/testar-no-wsl.md) |
 | Entender o produto, as entregas, a equipe e o custo | [Plano do MVP](docs/plano-do-mvp.md) |
 | Implementar e validar Bell, GHZ e Bernstein-Vazirani | [Protocolo científico](docs/protocolo-cientifico.md) |
@@ -132,7 +136,7 @@ Ao concluir uma comparação, **Leitura dos resultados** apresenta um resumo em 
 | Proteger componentes privados e definir o que bloqueia a publicação | [Proteção do produto](docs/protecao-do-produto.md) |
 | Verificar os relatórios de IA e preparar a primeira versão | [Qualidade e liberação](docs/qualidade-e-release.md) |
 
-As três comparações, a API, a interface e o relatório com evidências já rodam localmente. O próximo marco prepara a versão candidata e o aceite do piloto. As sessões com participantes e a conexão física IBM Quantum seguem os critérios registrados no plano.
+As três comparações, a API, a interface e o relatório com evidências já rodam localmente. A candidata técnica acrescenta limites do executor e revisão do pacote. O próximo passo reúne os aceites humanos, a decisão de licença e as sessões do piloto. A conexão física IBM Quantum segue os critérios posteriores registrados no plano.
 
 ## Começar o trabalho
 

@@ -424,11 +424,15 @@ function paint(job: Job) {
   if (seed) seed.textContent = ` · Semente ${job.base_seed}`;
   const state = byId("job-state"); state.dataset.status = job.status;
   if (state.textContent !== statuses[job.status]) state.textContent = statuses[job.status];
+  const errorCode = job.attempts.at(-1)?.error_code;
+  const failureMessage = errorCode === "TimeLimitExceeded" ? "A execução atingiu o limite de tempo. As medições já salvas foram preservadas." :
+    errorCode === "MemoryLimitExceeded" ? "A execução atingiu o limite de memória virtual. As medições já salvas foram preservadas." :
+    "A execução falhou. Você pode retomar a mesma comparação.";
   const messages = {
     queued: "Aguardando o executor local.",
     running: "O executor está registrando as medições.",
     completed: complete ? "Medições concluídas nas duas condições." : "O resultado completo ainda não está disponível.",
-    failed: "A execução falhou. Você pode retomar a mesma comparação.",
+    failed: failureMessage,
   };
   if (detailMessage.textContent !== messages[job.status]) detailMessage.textContent = messages[job.status];
   const progressNodes = modes.map(mode => {
