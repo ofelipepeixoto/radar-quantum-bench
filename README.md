@@ -96,12 +96,27 @@ curl -X POST http://127.0.0.1:8000/api/v1/comparacoes   -H 'Content-Type: applic
 
 A resposta traz o `id` da comparação. Use-o nas rotas de consulta, métricas e exportação descritas no [guia da API local](docs/api-local.md). Repetir a chave com a mesma configuração devolve o mesmo trabalho. Após reiniciar o executor, os checkpoints salvos permitem completar as medições pendentes. O [registro deste marco](docs/marco-api.md) reúne as verificações e o próximo trabalho de interface.
 
+## Abrir a interface em português
+
+Com as dependências Python da API instaladas, compile a página na pasta web e inicie novamente o servidor. Use Node 22.23.4 ou posterior.
+
+```bash
+cd web
+npm ci
+npm run build
+cd ..
+python -m radar_quantum_bench.local serve --data-dir local-data
+```
+
+Mantenha o executor ativo em outro terminal e abra **http://127.0.0.1:8000**. A bancada permite escolher o circuito, acompanhar as duas condições, comparar as distribuições e baixar o ZIP. O endereço guarda o ID para reabrir a mesma comparação após recarregar. [Guia da interface](docs/interface-local.md) · [Verificação deste marco](docs/marco-interface.md)
+
 ## Documentação
 
 | Para quem quer | Documento |
 | --- | --- |
 | Entender o produto, as entregas, a equipe e o custo | [Plano do MVP](docs/plano-do-mvp.md) |
 | Implementar e validar Bell, GHZ e Bernstein-Vazirani | [Protocolo científico](docs/protocolo-cientifico.md) |
+| Executar e conferir uma comparação pelo navegador | [Interface em português](docs/interface-local.md) |
 | Iniciar a API local, executar a fila e recuperar o histórico | [Operação da API](docs/api-local.md) |
 | Definir API, fila, dados e pacote de reprodução | [Arquitetura e contratos](docs/arquitetura.md) |
 | Escolher bibliotecas, repositórios, APIs e sites oficiais | [Guia de integrações quânticas](docs/integracoes.md) |

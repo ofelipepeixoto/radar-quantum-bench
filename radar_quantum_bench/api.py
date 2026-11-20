@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from starlette.background import BackgroundTask
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -19,6 +20,11 @@ from .metrics import specifications
 from .store import Conflict, InvalidState, NotFound, QueueFull, Store
 
 _DEFAULT_SEEDS = {"bell": 20261120, "ghz": 20261220, "bv": 20261320}
+_CONTENT_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "font-src 'self'; img-src 'self' data:; connect-src 'self'; "
+    "object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+)
 
 
 class ComparisonRequest(BaseModel):
@@ -30,7 +36,7 @@ class ComparisonRequest(BaseModel):
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128, pattern=r"^\S+$")]
 
 
-def create_app(data_dir: Path, capacity: int = 32) -> FastAPI:
+def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None) -> FastAPI:
     app = FastAPI(title="Radar Quantum Bench · API local", version="0.3.0",
                   docs_url=None, redoc_url=None)
     store = Store(Path(data_dir), capacity=capacity)
@@ -38,11 +44,17 @@ def create_app(data_dir: Path, capacity: int = 32) -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
 
     @app.middleware("http")
-    async def same_origin(request: Request, call_next):
+    async def local_response(request: Request, call_next):
         origin = request.headers.get("origin")
         if origin and origin != str(request.base_url).rstrip("/"):
-            return JSONResponse(status_code=403, content={"detail": "Origem não autorizada."})
-        return await call_next(request)
+            response = JSONResponse(status_code=403, content={"detail": "Origem não autorizada."})
+        else:
+            response = await call_next(request)
+        response.headers["Content-Security-Policy"] = _CONTENT_POLICY
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     for error, code, detail in (
         (NotFound, 404, "Comparação não encontrada."),
@@ -130,5 +142,16 @@ def create_app(data_dir: Path, capacity: int = 32) -> FastAPI:
             filename=f"Radar-Quantum-Bench-{job['circuit'].upper()}.zip",
             background=BackgroundTask(shutil.rmtree, folder),
         )
+
+    frontend = ui_dir if ui_dir is not None else Path(__file__).resolve().parents[1] / "web" / "dist"
+    if (frontend / "index.html").is_file():
+        app.mount("/", StaticFiles(directory=frontend, html=True), name="interface")
+    else:
+        @app.get("/", include_in_schema=False)
+        def frontend_unavailable():
+            raise HTTPException(
+                503, "Para abrir a interface, execute npm ci e npm run build na pasta web "
+                "e reinicie o serviço local. A API está disponível em /api/v1/experimentos.",
+            )
 
     return app

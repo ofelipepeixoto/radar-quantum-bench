@@ -64,4 +64,4 @@ Antes de atualizar o software, encerre os processos e guarde a cópia. Use a ver
 
 Use um diretório por instalação local e mantenha a API em loopback. A aplicação restringe Host e confere a origem apresentada pelo navegador. Esta edição pressupõe usuários autorizados no próprio computador. A modalidade compartilhada entre instituições terá autenticação e autorização por recurso como marco próprio.
 
-O banco e os checkpoints ficam fora do controle de versão por padrão em `local-data`. Os ZIPs exportados pela API são cápsulas científicas. Para operar a fila e a API, use os módulos adicionais do repositório e `requirements-api.txt`. O próximo marco de interface poderá consumir este contrato HTTP.
+O banco e os checkpoints ficam fora do controle de versão por padrão em `local-data`. Os ZIPs exportados pela API são cápsulas científicas. Para operar a fila e a API, use os módulos adicionais do repositório e `requirements-api.txt`. A [interface em português](interface-local.md) já consome este contrato HTTP na mesma origem. O servidor a disponibiliza quando encontra o build em web/dist ao iniciar.
