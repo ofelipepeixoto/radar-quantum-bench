@@ -12,18 +12,39 @@ import sys
 from urllib.parse import unquote, urlsplit
 from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile, ZipInfo
 
+from .licensing import validate_license
+
 
 POLICY = "releases/public-files.json"
 MANIFEST = "RELEASE-MANIFEST.json"
-SCHEMA = "rqb-review-candidate/1"
+LEGACY_SCHEMA = "rqb-review-candidate/1"
+SCHEMA = "rqb-review-candidate/2"
 POLICY_SCHEMA = "rqb-public-files/1"
 REQUIRED = {POLICY, "releases/dependencies.json", "THIRD_PARTY_NOTICES.md", "README.md"}
+LICENSE_FILES = {"LICENSE", "NOTICE", "LICENSE-SCOPE.json"}
+DEVELOPMENT_POLICY_FILE = "config/development-policy.json"
+LEGACY_READINESS = {"status": "blocked", "reasons": ["licenca_propria_pendente"],
+                    "scope": "revisao_tecnica_sem_autorizacao_de_redistribuicao"}
+READINESS = {"status": "review_only", "reasons": ["aceites_humanos_pendentes"],
+             "scope": "portfolio_cientifico_sem_validacao_comercial"}
+DEVELOPMENT_POLICY = {"schema": "rqb-development-policy/1",
+                      "buyer_validation": "deferred_by_owner", "integrations": "local_free_only",
+                      "paid_execution": False}
 MAX_FILE = 4 * 1024 * 1024
 MAX_TOTAL = 24 * 1024 * 1024
 _DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 _REVISION = re.compile(r"[0-9a-f]{40}\Z")
 _ASSET = re.compile(r"web/dist/_astro/[A-Za-z0-9_.-]+\.(?:js|css|woff2?)\Z")
 _LICENSES = {"web/dist/licencas/Geist-OFL.txt", "web/dist/licencas/IBM-Plex-Mono-OFL.txt"}
+
+
+def validate_development_policy(value):
+    """Accept the authorized local-only policy with exact types, including bool."""
+    if (type(value) is not dict or set(value) != set(DEVELOPMENT_POLICY)
+            or any(type(value[key]) is not type(expected) or value[key] != expected
+                   for key, expected in DEVELOPMENT_POLICY.items())):
+        raise ValueError("A política exige integrações locais gratuitas e execução paga desativada.")
+    return dict(value)
 
 
 def _unique(pairs):
@@ -181,6 +202,8 @@ def build_release(root, output, revision, *, forbidden_markers=()):
     snapshot = web_snapshot(root)
     if snapshot != policy["web_files"]:
         raise ValueError("O build difere da lista revisada. Revise e registre o build novamente.")
+    if not (LICENSE_FILES | {DEVELOPMENT_POLICY_FILE}).issubset(policy["source_files"]):
+        raise ValueError("A candidata atual exige licença e política de desenvolvimento.")
     files = {name: _read(root, name) for name in policy["source_files"]}
     _bound_revision(root, revision, files)
     files.update({name: _read(root, name) for name in snapshot})
@@ -190,11 +213,15 @@ def build_release(root, output, revision, *, forbidden_markers=()):
     inventory = _json(files["releases/dependencies.json"])
     if not isinstance(inventory, dict) or not inventory:
         raise ValueError("Inventário de dependências ausente.")
+    license_record = validate_license(files)
+    validate_development_policy(_json(files[DEVELOPMENT_POLICY_FILE]))
+    if inventory.get("own_code_license") != "Apache-2.0":
+        raise ValueError("O inventário não corresponde à licença do núcleo.")
     manifest = {
         "schema": SCHEMA, "profile": "review-candidate", "source_revision": revision,
         "source_revision_verified": True,
-        "readiness": {"status": "blocked", "reasons": ["licenca_propria_pendente"],
-                      "scope": "revisao_tecnica_sem_autorizacao_de_redistribuicao"},
+        "readiness": dict(READINESS), "license": license_record,
+        "development_policy": dict(DEVELOPMENT_POLICY),
         "files": {name: {"sha256": sha256(data).hexdigest(), "bytes": len(data)}
                   for name, data in sorted(files.items())},
     }
@@ -243,14 +270,17 @@ def verify_release(path, *, expected_sha256=None, forbidden_markers=()):
                 raise ValueError("Membro não regular ou excessivo no ZIP.")
             files[entry.filename] = archive.read(entry)
     manifest = _json(files.pop(MANIFEST))
-    if (not isinstance(manifest, dict) or set(manifest) != {
-            "schema", "profile", "source_revision", "source_revision_verified", "readiness", "files"}
-            or manifest["schema"] != SCHEMA or manifest["profile"] != "review-candidate"
-            or manifest["source_revision_verified"] is not True
+    base_keys = {"schema", "profile", "source_revision", "source_revision_verified", "readiness", "files"}
+    if type(manifest) is not dict:
+        raise ValueError("Manifesto inválido ou conteúdo inesperado.")
+    current = manifest.get("schema") == SCHEMA
+    expected_keys = base_keys | {"license", "development_policy"} if current else base_keys
+    expected_readiness = READINESS if current else LEGACY_READINESS
+    if (set(manifest) != expected_keys or manifest.get("schema") not in (LEGACY_SCHEMA, SCHEMA)
+            or manifest["profile"] != "review-candidate" or manifest["source_revision_verified"] is not True
             or not isinstance(manifest["source_revision"], str)
             or not _REVISION.fullmatch(manifest["source_revision"])
-            or manifest["readiness"] != {"status": "blocked", "reasons": ["licenca_propria_pendente"],
-                "scope": "revisao_tecnica_sem_autorizacao_de_redistribuicao"}
+            or manifest["readiness"] != expected_readiness
             or type(manifest["files"]) is not dict or set(manifest["files"]) != set(files)):
         raise ValueError("Manifesto inválido ou conteúdo inesperado.")
     if not REQUIRED.issubset(files):
@@ -269,6 +299,14 @@ def verify_release(path, *, expected_sha256=None, forbidden_markers=()):
     inventory = _json(files["releases/dependencies.json"])
     if not isinstance(inventory, dict) or not inventory:
         raise ValueError("Inventário inválido.")
+    if current:
+        if not (LICENSE_FILES | {DEVELOPMENT_POLICY_FILE}).issubset(files):
+            raise ValueError("A candidata atual não contém licença e política.")
+        validate_development_policy(manifest["development_policy"])
+        validate_development_policy(_json(files[DEVELOPMENT_POLICY_FILE]))
+        if (manifest["license"] != validate_license(files)
+                or inventory.get("own_code_license") != "Apache-2.0"):
+            raise ValueError("Licença ou política da candidata divergente.")
     _scan(files, forbidden_markers)
     return manifest
 

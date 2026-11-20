@@ -1,0 +1,23 @@
+{
+  "schema": "rqb-public-contract/1",
+  "core_license": "Apache-2.0",
+  "api_version": "0.5.0",
+  "development_policy": {
+    "schema": "rqb-development-policy/1",
+    "buyer_validation": "deferred_by_owner",
+    "integrations": "local_free_only",
+    "paid_execution": false
+  },
+  "capabilities": {
+    "scientific_catalog": ["bell", "ghz", "bv"],
+    "result_schema_versions": [1, 2],
+    "api_scope": "single_local_installation",
+    "auth": "not_implemented_multi_tenant",
+    "hardware_execution": "disabled"
+  },
+  "schemas": {
+    "report": "rqb-report/1",
+    "review_bundle": ["rqb-review-candidate/1", "rqb-review-candidate/2"],
+    "license_scope": "rqb-license-scope/1"
+  }
+}

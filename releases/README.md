@@ -1,6 +1,6 @@
 # Pacote candidato para revisão técnica
 
-O comando de distribuição prepara uma cópia para revisão da instalação local. O perfil desta entrega é `review-candidate`. O manifesto registra `readiness.status` como `blocked` e o motivo `licenca_propria_pendente`. Isso não concede uma licença de uso ou redistribuição do código próprio e não declara o piloto aprovado. As atribuições dos componentes de terceiros estão em [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) e o inventário está em [dependencies.json](dependencies.json).
+O comando de distribuição prepara uma cópia para revisão da instalação local. O perfil desta entrega é `review-candidate`. O formato novo `rqb-review-candidate/2` registra Apache-2.0 para as porções próprias, hashes de licença e escopo e `readiness.status` como `review_only`, com aceites humanos pendentes. A validação com comprador está adiada por decisão do titular. Esse estado não declara o piloto aprovado. As atribuições dos componentes de terceiros estão em [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) e o inventário está em [dependencies.json](dependencies.json).
 
 ## Preparar a revisão
 
@@ -47,4 +47,4 @@ Os comandos `build` e `verify` aceitam `--forbid-marker MARCADOR`, repetível. O
 
 O controle combina a lista revisada, os hashes e os marcadores declarados. Ele não é um classificador universal de segredos. O código distribuído permanece inspecionável. Proteger uma implementação comercial reservada exige mantê-la fora dos arquivos entregues, conforme o [plano de proteção](../docs/protecao-do-produto.md).
 
-Depois da revisão, ainda será necessário resolver a licença do código próprio e registrar os demais aceites do [piloto](../docs/piloto-e-telas.md) antes de tratar a candidata como versão liberada.
+Depois da revisão técnica, os aceites humanos continuam registrados como pendentes. A validação com comprador está adiada por decisão do titular. Pacotes antigos no formato 1 continuam legíveis com a política original. A [divisão das edições](../docs/nucleo-e-edicao-comercial.md) registra o alcance da licença e os próximos passos.

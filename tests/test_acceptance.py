@@ -61,6 +61,39 @@ class AcceptanceTests(unittest.TestCase):
         with self.assertRaises(Exception):
             a.initialize(self.candidate, self.directory / 'invalid-archive', expected_sha256=sha256(self.candidate.read_bytes()).hexdigest())
 
+    def test_current_license_does_not_imply_buyer_or_human_validation(self):
+        from radar_quantum_bench.release import SCHEMA, READINESS, DEVELOPMENT_POLICY
+        records = self.directory / 'current-record'
+        license_record = {'spdx': 'Apache-2.0', 'license_sha256': '1' * 64,
+                          'notice_sha256': '2' * 64, 'scope_sha256': '3' * 64}
+        manifest = {'schema': SCHEMA, 'source_revision': 'a' * 40, 'readiness': READINESS,
+                    'license': license_record, 'development_policy': DEVELOPMENT_POLICY}
+        with patch.object(a, 'verify_release', return_value=manifest):
+            state = a.initialize(self.candidate, records,
+                                 expected_sha256=sha256(self.candidate.read_bytes()).hexdigest())
+        self.assertEqual(state['schema'], a.SCHEMA)
+        result = a.summarize(records)
+        self.assertEqual(result['checks']['license'], 'verified_from_candidate')
+        self.assertEqual(result['buyer_validation'], 'deferred_by_owner')
+        self.assertIs(result['paid_execution'], False)
+        self.assertEqual(result['decision'], 'pending_human_acceptance')
+        self.assertEqual(result['sessions_recorded'], 0)
+        self.assertIn('scientific_review', result['pending_checks'])
+        self.assertIn('wsl_pc', result['pending_checks'])
+        raw = json.loads((records / 'acceptance.json').read_bytes())
+        raw['development_policy']['paid_execution'] = True
+        (records / 'acceptance.json').write_text(json.dumps(raw))
+        with self.assertRaises(ValueError):
+            a.summarize(records)
+
+    def test_legacy_registry_cannot_be_silently_reclassified_as_licensed(self):
+        from radar_quantum_bench.release import READINESS
+        raw = json.loads((self.records / 'acceptance.json').read_bytes())
+        raw['candidate_readiness'] = READINESS
+        (self.records / 'acceptance.json').write_text(json.dumps(raw))
+        with self.assertRaises(ValueError):
+            a.summarize(self.records)
+
     def test_recorded_human_history_is_distinct_from_authentication(self):
         a.add_check(self.records, self.check(result='failed'), self.attachment)
         a.add_check(self.records, self.check(result='passed'), self.attachment)

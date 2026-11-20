@@ -12,8 +12,12 @@ import warnings
 from zipfile import ZipFile, ZipInfo
 
 from radar_quantum_bench.release import (
-    MANIFEST, POLICY, POLICY_SCHEMA, build_release, verify_release, web_snapshot,
+    MANIFEST, POLICY, POLICY_SCHEMA, SCHEMA, LEGACY_SCHEMA, READINESS, LEGACY_READINESS,
+    DEVELOPMENT_POLICY, DEVELOPMENT_POLICY_FILE, build_release, verify_release, web_snapshot,
 )
+from radar_quantum_bench.licensing import NOTICE_TEXT
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReviewReleaseTests(unittest.TestCase):
@@ -25,7 +29,11 @@ class ReviewReleaseTests(unittest.TestCase):
             "README.md": "Candidata fictícia para revisão.\n",
             "app.py": "VALUE = 1\n",
             "THIRD_PARTY_NOTICES.md": "Inventário fictício.\n",
-            "releases/dependencies.json": json.dumps({"schema": "fixture/1", "components": []}),
+            "releases/dependencies.json": json.dumps({"schema": "fixture/1", "components": [],
+                                                        "own_code_license": "Apache-2.0"}),
+            "LICENSE": (ROOT / "LICENSE").read_text(),
+            "NOTICE": NOTICE_TEXT,
+            DEVELOPMENT_POLICY_FILE: json.dumps(DEVELOPMENT_POLICY),
             "web/dist/index.html": '<html><head><link href="/_astro/index.abc.css" rel="stylesheet"></head>'
                                    '<body><script src="/_astro/app.def.js"></script></body></html>',
             "web/dist/_astro/index.abc.css": '@font-face{src:url(/_astro/font.ghi.woff2)}',
@@ -36,8 +44,9 @@ class ReviewReleaseTests(unittest.TestCase):
         }
         for name, value in self.files.items():
             self.write(name, value)
-        self.sources = ["README.md", "app.py", "THIRD_PARTY_NOTICES.md",
-                        "releases/dependencies.json", POLICY]
+        self.sources = ["README.md", "app.py", "THIRD_PARTY_NOTICES.md", "LICENSE", "NOTICE",
+                        "LICENSE-SCOPE.json", DEVELOPMENT_POLICY_FILE, "releases/dependencies.json", POLICY]
+        self.refresh_scope()
         self.refresh_policy()
         self.git("init", "--quiet")
         self.commit()
@@ -50,6 +59,19 @@ class ReviewReleaseTests(unittest.TestCase):
     def git(self, *args):
         return subprocess.run(["git", "-C", str(self.root), *args], check=True,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout.decode().strip()
+
+    def refresh_scope(self):
+        scope = {"schema": "rqb-license-scope/1", "own_license": "Apache-2.0",
+                 "scope": "public-core-existing-mvp-only",
+                 "own_files": sorted({"README.md", "app.py", DEVELOPMENT_POLICY_FILE,
+                                      "releases/dependencies.json", POLICY}),
+                 "generated_own_files": sorted({"web/dist/index.html", "web/dist/_astro/index.abc.css",
+                                                 "web/dist/_astro/app.def.js"}),
+                 "legacy_archives": [],
+                 "third_party_files": sorted({"web/dist/_astro/font.ghi.woff2",
+                                                "web/dist/licencas/Geist-OFL.txt", "web/dist/licencas/IBM-Plex-Mono-OFL.txt"}),
+                 "license_support_files": sorted({"LICENSE", "NOTICE", "LICENSE-SCOPE.json", "THIRD_PARTY_NOTICES.md"})}
+        self.write("LICENSE-SCOPE.json", json.dumps(scope))
 
     def refresh_policy(self):
         self.write(POLICY, json.dumps({"schema": POLICY_SCHEMA, "source_files": self.sources,
@@ -77,8 +99,10 @@ class ReviewReleaseTests(unittest.TestCase):
         digest = sha256(self.archive.read_bytes()).hexdigest()
         self.assertEqual(verify_release(self.archive, expected_sha256=digest), expected)
         self.assertEqual(expected["profile"], "review-candidate")
-        self.assertEqual(expected["readiness"]["status"], "blocked")
-        self.assertEqual(expected["readiness"]["reasons"], ["licenca_propria_pendente"])
+        self.assertEqual(expected["schema"], SCHEMA)
+        self.assertEqual(expected["readiness"], READINESS)
+        self.assertEqual(expected["license"]["spdx"], "Apache-2.0")
+        self.assertEqual(expected["development_policy"], DEVELOPMENT_POLICY)
         self.assertEqual(expected["source_revision"], self.revision)
         second = self.root.parent / (uuid4().hex + ".zip")
         self.addCleanup(second.unlink, missing_ok=True)
@@ -88,6 +112,64 @@ class ReviewReleaseTests(unittest.TestCase):
             self.build()
         with self.assertRaisesRegex(ValueError, "SHA-256 esperado"):
             verify_release(self.archive, expected_sha256="f" * 64)
+
+    def test_license_and_paid_policy_changes_are_not_accepted_as_current_review(self):
+        for name, value in (("LICENSE", "not the Apache license"),
+                            (DEVELOPMENT_POLICY_FILE, json.dumps({**DEVELOPMENT_POLICY, "paid_execution": True})),
+                            (DEVELOPMENT_POLICY_FILE, json.dumps({**DEVELOPMENT_POLICY, "paid_execution": 0})),
+                            ("NOTICE", "another grant")):
+            with self.subTest(name=name):
+                original = (self.root / name).read_text()
+                self.write(name, value)
+                self.commit()
+                with self.assertRaises(ValueError):
+                    self.build()
+                self.assertFalse(self.archive.exists())
+                self.write(name, original)
+                self.commit()
+
+    def test_verifier_rejects_forged_license_readiness_and_boolean_policy_metadata(self):
+        mutations = (
+            lambda manifest: manifest['license'].update(spdx='MIT'),
+            lambda manifest: manifest['development_policy'].update(paid_execution=0),
+            lambda manifest: manifest['readiness'].update(status='commercial_ready'),
+        )
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                self.build()
+                def forged(files):
+                    manifest = json.loads(files[MANIFEST])
+                    mutate(manifest)
+                    files[MANIFEST] = json.dumps(manifest).encode()
+                self.rewrite(forged)
+                with self.assertRaises(ValueError):
+                    verify_release(self.archive)
+                self.archive.unlink()
+
+    def test_legacy_review_package_keeps_its_original_unresolved_license_state(self):
+        self.build()
+        def legacy(files):
+            manifest = json.loads(files[MANIFEST])
+            manifest['schema'] = LEGACY_SCHEMA
+            manifest['readiness'] = LEGACY_READINESS
+            manifest.pop('license')
+            manifest.pop('development_policy')
+            policy = json.loads(files[POLICY])
+            for name in ('LICENSE', 'NOTICE', 'LICENSE-SCOPE.json', DEVELOPMENT_POLICY_FILE):
+                files.pop(name)
+                policy['source_files'].remove(name)
+            files[POLICY] = json.dumps(policy).encode()
+            inventory = json.loads(files['releases/dependencies.json'])
+            inventory['own_code_license'] = 'pending-owner-decision'
+            files['releases/dependencies.json'] = json.dumps(inventory).encode()
+            manifest['files'] = {name: {'sha256': sha256(data).hexdigest(), 'bytes': len(data)}
+                                 for name, data in files.items() if name != MANIFEST}
+            files[MANIFEST] = json.dumps(manifest).encode()
+        self.rewrite(legacy)
+        result = verify_release(self.archive)
+        self.assertEqual(result['schema'], LEGACY_SCHEMA)
+        self.assertEqual(result['readiness'], LEGACY_READINESS)
+        self.assertNotIn('license', result)
 
     def test_excluded_lab_data_never_enters_candidate(self):
         marker = uuid4().hex

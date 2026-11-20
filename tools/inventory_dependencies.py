@@ -41,7 +41,7 @@ def generate(root):
             'target': {'os': 'linux', 'arch': 'x86_64', 'python': '3.12'},
             'scope': 'Python instalado das versões travadas e referências do lockfile npm, incluindo opcionais de outras plataformas. O pacote não inclui wheels ou node_modules.',
             'requirements_sha256': {name: sha256((root / name).read_bytes()).hexdigest() for name in ('requirements.txt', 'requirements-api.txt', 'web/package-lock.json')},
-            'own_code_license': 'pending-owner-decision',
+            'own_code_license': 'Apache-2.0',
             'python': sorted(python, key=lambda item: item['name']), 'npm_lock': node}
 
 

@@ -18,10 +18,14 @@ import re
 from statistics import median
 import tempfile
 
-from .release import verify_release
+from .release import (
+    DEVELOPMENT_POLICY, LEGACY_READINESS, READINESS, SCHEMA as RELEASE_SCHEMA,
+    validate_development_policy, verify_release,
+)
 
 
-SCHEMA = "rqb-pilot-acceptance/1"
+LEGACY_SCHEMA = "rqb-pilot-acceptance/1"
+SCHEMA = "rqb-pilot-acceptance/2"
 CHECKS = ("license", "wsl_pc", "second_computer", "scientific_review", "screen_reader", "local_model")
 SEEDS = {"A": {"bell": 20261120, "ghz": 20261220, "bv": 20261320},
          "B": {"bell": 20261121, "ghz": 20261221, "bv": 20261321}}
@@ -288,15 +292,25 @@ def _attachment(root, digest, path=None):
 
 def _load(root):
     state = _decode((root / "acceptance.json").read_bytes())
-    _fields(state, {"schema", "candidate_sha256", "source_revision", "candidate_readiness",
-                    "model_enabled", "checks", "sessions", "second_round", "technical_receipts"})
-    if state["schema"] != SCHEMA or type(state["model_enabled"]) is not bool:
+    if type(state) is not dict:
+        raise ValueError("Registro do piloto inválido.")
+    base_fields = {"schema", "candidate_sha256", "source_revision", "candidate_readiness",
+                   "model_enabled", "checks", "sessions", "second_round", "technical_receipts"}
+    current = state.get("schema") == SCHEMA
+    _fields(state, base_fields | {"candidate_license", "development_policy"} if current else base_fields)
+    if state["schema"] not in (LEGACY_SCHEMA, SCHEMA) or type(state["model_enabled"]) is not bool:
         raise ValueError("Registro do piloto inválido.")
     _digest(state["candidate_sha256"])
     _digest(state["source_revision"], 40)
-    if state["candidate_readiness"] != {"status": "blocked", "reasons": ["licenca_propria_pendente"],
-                                       "scope": "revisao_tecnica_sem_autorizacao_de_redistribuicao"}:
+    if state["candidate_readiness"] != (READINESS if current else LEGACY_READINESS):
         raise ValueError("Política da candidata incompatível com esta versão.")
+    if current:
+        _fields(state["candidate_license"], {"spdx", "license_sha256", "notice_sha256", "scope_sha256"})
+        if state["candidate_license"]["spdx"] != "Apache-2.0":
+            raise ValueError("Licença incompatível.")
+        validate_development_policy(state["development_policy"])
+        for key in ("license_sha256", "notice_sha256", "scope_sha256"):
+            _digest(state["candidate_license"][key])
     _fields(state["technical_receipts"], {"local_model", "workstation"})
     for kind, digests in state["technical_receipts"].items():
         if type(digests) is not list or len(digests) > 20:
@@ -335,11 +349,16 @@ def initialize(candidate, directory=_DEFAULT, *, expected_sha256, model_enabled=
     path = Path(candidate)
     _digest(expected_sha256)
     manifest = verify_release(path, expected_sha256=expected_sha256)
-    state = {"schema": SCHEMA, "candidate_sha256": sha256(path.read_bytes()).hexdigest(),
+    current = manifest.get("schema") == RELEASE_SCHEMA
+    state = {"schema": SCHEMA if current else LEGACY_SCHEMA,
+             "candidate_sha256": sha256(path.read_bytes()).hexdigest(),
              "source_revision": manifest["source_revision"], "candidate_readiness": manifest["readiness"],
              "model_enabled": model_enabled, "checks": {key: [] for key in CHECKS},
              "sessions": [], "second_round": None,
              "technical_receipts": {"local_model": [], "workstation": []}}
+    if current:
+        state["candidate_license"] = manifest["license"]
+        state["development_policy"] = manifest["development_policy"]
     with _locked(directory) as root:
         if (root / "acceptance.json").exists():
             raise ValueError("Um registro já existe neste diretório.")
@@ -407,15 +426,24 @@ def summarize(directory=_DEFAULT):
                  for key, entries in state["technical_receipts"].items()}
     if state["model_enabled"] and state["technical_receipts"]["local_model"]:
         checks["local_model"] = "technical_receipt_recorded"
+    current = state["schema"] == SCHEMA
+    if current:
+        # This confirms the package license bytes checked at initialization.
+        # It is not a human identity or a commercial/pilot validation.
+        checks["license"] = "verified_from_candidate"
     pending = [key for key, result in checks.items()
-               if result not in ("not_required", "passed", "technical_receipt_recorded")]
+               if result not in ("not_required", "passed", "technical_receipt_recorded", "verified_from_candidate")]
     return {"schema": "rqb-pilot-summary/1", "candidate_sha256": state["candidate_sha256"],
             "source_revision": state["source_revision"], "candidate_readiness": state["candidate_readiness"],
-            "decision": "blocked_by_candidate_policy", "human_attestations_independently_verified": False,
+            "decision": "pending_human_acceptance" if current else "blocked_by_candidate_policy",
+            "license": state["candidate_license"] if current else None,
+            "buyer_validation": state["development_policy"]["buyer_validation"] if current else "not_recorded",
+            "paid_execution": state["development_policy"]["paid_execution"] if current else None,
+            "human_attestations_independently_verified": False,
             "checks": checks, "pending_checks": pending, "criteria": criteria,
             "technical_receipts": technical, "technical_receipts_authenticated": False,
             "manual_attestations_complete": all(value == "passed" for key, value in checks.items()
-                                                 if key != "local_model"),
+                                                 if key not in (("local_model", "license") if current else ("local_model",))),
             "sessions_recorded": len(sessions), "exports_without_help_within_600s": exports,
             "completed_pairs_count": len(completed_pairs),
             "correct_interpretations": interpretation, "peer_recalculations": peers,

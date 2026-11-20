@@ -114,11 +114,17 @@ Mantenha o executor ativo em outro terminal e abra **http://127.0.0.1:8000**. A 
 
 Ao concluir uma comparação, **Leitura dos resultados** apresenta um resumo em português. Cada observação aponta para fatos com contagens, unidades e origem no JSON. É possível baixar a explicação em Markdown e JSON. O resumo funciona sem modelo de IA. Uma instalação com Ollama pode habilitar a seleção de observações por um modelo local, somente após um clique. O servidor valida a seleção e preserva o resumo local se a consulta falhar. [Operar o relator](docs/relatorios-locais.md) · [Verificação deste marco](docs/marco-relatorios.md)
 
+## Licença e edição comercial
+
+O código e as porções próprias da edição científica local pública estão sob **Apache License 2.0**. O escopo inclui os circuitos, as métricas, a reprodução e os recursos locais de apoio já publicados. [LICENSE](LICENSE) · [NOTICE](NOTICE) · [Escopo por arquivo](LICENSE-SCOPE.json)
+
+Os futuros recursos comerciais evoluem separadamente em uma frente privada, ligada à revisão e ao contrato do núcleo. A validação com comprador está adiada e as integrações atuais permanecem locais e gratuitas. A prontidão técnica descrita no projeto não limita os direitos concedidos pela Apache 2.0. [Como manter as duas edições](docs/nucleo-e-edicao-comercial.md) · [O que já pode ser oferecido](docs/prontidao-comercial.md) · [Verificação desta divisão](docs/marco-open-core.md)
+
 ## Documentação
 
-O [registro do piloto](docs/registro-do-piloto.md) reúne os comandos para conferir a candidata no computador do operador, testar um modelo local e guardar os aceites e as cinco sessões de forma privada. O protocolo compacto de IA foi exercitado com um modelo real nos três circuitos. [Evidências desta etapa](docs/marco-aceites.md) · [Proposta de licença](docs/decisao-de-licenca.md)
+O [registro do piloto](docs/registro-do-piloto.md) reúne os comandos para conferir a candidata no computador do operador, testar um modelo local e guardar os aceites e as cinco sessões de forma privada. O protocolo compacto de IA foi exercitado com um modelo real nos três circuitos. [Evidências desta etapa](docs/marco-aceites.md) · [Decisão de licença](docs/decisao-de-licenca.md)
 
-A preparação da candidata acrescenta execução supervisionada com prazo e teto de memória virtual, recibos operacionais e conferência dos arquivos distribuídos. O pacote é destinado à revisão técnica e conserva a pendência de licença própria. [Verificação da candidata](docs/marco-candidata.md) · [Onde estamos e o que falta](docs/panorama-do-projeto.md)
+A preparação da candidata acrescenta execução supervisionada com prazo e teto de memória virtual, recibos operacionais e conferência dos arquivos distribuídos. O pacote é destinado à revisão técnica, com licença própria conferida e aceites humanos pendentes. [Verificação da candidata](docs/marco-candidata.md) · [Onde estamos e o que falta](docs/panorama-do-projeto.md)
 
 | Para quem quer | Documento |
 | --- | --- |
@@ -139,7 +145,7 @@ A preparação da candidata acrescenta execução supervisionada com prazo e tet
 | Proteger componentes privados e definir o que bloqueia a publicação | [Proteção do produto](docs/protecao-do-produto.md) |
 | Verificar os relatórios de IA e preparar a primeira versão | [Qualidade e liberação](docs/qualidade-e-release.md) |
 
-As três comparações, a API, a interface e o relatório com evidências já rodam localmente. A candidata técnica acrescenta limites do executor e revisão do pacote. O próximo passo reúne os aceites humanos, a decisão de licença e as sessões do piloto. A conexão física IBM Quantum segue os critérios posteriores registrados no plano.
+As três comparações, a API, a interface e o relatório com evidências já rodam localmente. A candidata técnica acrescenta limites do executor e revisão do pacote. A licença pública foi definida. Os próximos aceites humanos continuam documentados e a validação com um comprador está adiada. A conexão física IBM Quantum segue os critérios posteriores registrados no plano.
 
 ## Começar o trabalho
 

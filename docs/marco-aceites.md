@@ -37,6 +37,6 @@ Os registros permanecem em `local-data/acceptance`. A exportação reduzida omit
 | Guardas | Evidência existente preservada, campos extras recusados, anexo divergente recusado, falha da IA não vira aprovação e registros protegidos de escrita em pastas públicas |
 | Privacidade | Recibos e anexos privados por padrão, resumo reduzido e ausência de publicação automática |
 
-A decisão de licença está organizada em [Decisão de licença](decisao-de-licenca.md), com alternativas e efeitos no modelo por laboratório. A proposta de avaliação temporária precisa resolver também o recebimento das cápsulas com código por colegas. Nenhuma concessão foi aplicada sem essa definição. O manifesto da candidata conserva `licenca_propria_pendente`.
+No encerramento deste marco, a licença ainda aguardava decisão e o manifesto conservava `licenca_propria_pendente`. Esse é um registro histórico. A entrega seguinte aplicou Apache 2.0 ao núcleo público e atualizou os novos manifestos. Veja a [decisão vigente](decisao-de-licenca.md) e o [marco das duas edições](marco-open-core.md).
 
-Continuam dependendo de participação humana a licença, o percurso no PC Windows do usuário, o teste com leitor de tela, a revisão científica independente, a reprodução em outro computador físico e as cinco sessões. O núcleo técnico e a validação local de IA estão disponíveis para apoiar esses aceites.
+Continuam dependendo de participação humana o percurso no PC Windows do usuário, o teste com leitor de tela, a revisão científica independente e a reprodução em outro computador físico. As cinco sessões estão adiadas por decisão do titular. O núcleo técnico e a validação local de IA estão disponíveis para apoiar esses aceites quando retomados.
