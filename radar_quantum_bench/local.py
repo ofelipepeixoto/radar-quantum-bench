@@ -11,6 +11,7 @@ def main(argv=None):
     serve = commands.add_parser("serve", help="abrir API no endereço 127.0.0.1")
     serve.add_argument("--data-dir", type=Path, default=Path("local-data"))
     serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--report-model", help="modelo já instalado no Ollama local, uso explícito pela tela")
     worker = commands.add_parser("worker", help="executar a fila em CPU")
     worker.add_argument("--data-dir", type=Path, default=Path("local-data"))
     worker.add_argument("--once", action="store_true", help="processar no máximo um trabalho")
@@ -21,7 +22,11 @@ def main(argv=None):
                 raise ValueError("A porta deve estar entre 1 e 65535.")
             import uvicorn
             from .api import create_app
-            uvicorn.run(create_app(args.data_dir), host="127.0.0.1", port=args.port)
+            advisor = None
+            if args.report_model:
+                from .ollama import OllamaAdvisor
+                advisor = OllamaAdvisor(args.report_model)
+            uvicorn.run(create_app(args.data_dir, advisor=advisor), host="127.0.0.1", port=args.port)
             return 0
         from .store import Store
         from .worker import run_worker

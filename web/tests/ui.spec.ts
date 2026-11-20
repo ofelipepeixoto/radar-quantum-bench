@@ -59,6 +59,33 @@ async function assertCountsFromApi(page: Page, job: Job) {
   await expect(page.locator('#metrics-body tr')).toHaveCount(2);
 }
 
+async function assertReportFromApi(page: Page, job: Job) {
+  const response = await page.request.get(`${jobs}/${job.id}/relatorio`);
+  expect(response.status()).toBe(200);
+  const report = await response.json();
+  await expect(page.locator('#report-content')).toBeVisible();
+  await expect(page.locator('#report-origin')).toHaveText('Resumo local');
+  await expect(page.locator('#report-summary')).toContainText(report.resumo.texto);
+  await expect(page.locator('#report-observations li')).toHaveCount(report.observacoes.length);
+  for (const observation of report.observacoes) {
+    await expect(page.locator('#report-observations')).toContainText(observation.texto);
+  }
+  const jobResponse = await page.request.get(`${jobs}/${job.id}`);
+  expect(report.result_sha256).toBe((await jobResponse.json()).result_sha256);
+  expect(report.estado).toBe('completo');
+  await expect(page.locator('#report-limitations')).toContainText('não comprova vantagem quântica');
+  await expect(page.locator('#report-model-button')).toBeHidden();
+  const evidence = report.fatos.find((fact: {id: string}) => fact.id === 'readout_2pct.taxa');
+  const link = page.locator(`a[aria-label$="Conferir evidência ${evidence.id}"]`).first();
+  await link.click();
+  await expect(page.locator('#report-evidence')).toHaveAttribute('open', '');
+  const factIndex = report.fatos.findIndex((fact: {id: string}) => fact.id === evidence.id);
+  const factRow = page.locator(`#report-fact-${factIndex}`);
+  await expect(factRow).toContainText(evidence.unidade);
+  await expect(factRow).toContainText(evidence.origem);
+  return report;
+}
+
 async function accessible(page: Page) {
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
@@ -93,7 +120,7 @@ test('teclado, medição Bell real, histórico e exportação do mesmo resultado
   await page.keyboard.press('ArrowLeft');
   await expect(bell).toBeChecked();
   await page.keyboard.press('Tab');
-  await expect(page.locator('details > summary')).toBeFocused();
+  await expect(page.locator('#experiment-form details > summary')).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.locator('#submit-button')).toBeFocused();
   const job = await submit(page, true);
@@ -101,9 +128,20 @@ test('teclado, medição Bell real, histórico e exportação do mesmo resultado
   await expect(page.locator('#comparison-title')).toBeFocused();
   await waitForComplete(page);
   await assertCountsFromApi(page, job);
+  const report = await assertReportFromApi(page, job);
+  for (const extension of ['md', 'json']) {
+    const downloadStart = page.waitForEvent('download');
+    await page.locator(`#report-download-${extension}`).click();
+    const reportDownload = await downloadStart;
+    const body = await readFile((await reportDownload.path())!, 'utf-8');
+    expect(body).toContain(report.result_sha256);
+    if (extension === 'json') expect(JSON.parse(body)).toEqual(report);
+    else expect(body).toContain(report.resumo.texto);
+  }
   await page.screenshot({path: info.outputPath('bell-desktop.png'), fullPage: true});
   await page.reload();
   await waitForComplete(page);
+  await expect(page.locator('#report-summary')).toContainText(report.resumo.texto);
   await expect(page.locator('#job-id')).toContainText(job.id);
 
   await startPage(page);
@@ -137,8 +175,59 @@ for (const [circuit, seed] of [['ghz', 19171], ['bv', 19172]] as const) {
     expect(job.base_seed).toBe(seed);
     await waitForComplete(page);
     await assertCountsFromApi(page, job);
+    await assertReportFromApi(page, job);
   });
 }
+
+test('falha simulada de leitura do relatório permite reconectar e preserva as contagens', async ({ page }) => {
+  let fail = true;
+  await page.route('**/api/v1/comparacoes/*/relatorio', async route => {
+    if (fail) await route.fulfill({status: 503, json: {detail: 'Falha de leitura simulada'}});
+    else await route.continue();
+  });
+  await startPage(page);
+  const job = await submit(page);
+  await waitForComplete(page);
+  await expect(page.locator('#report-retry')).toBeVisible();
+  await assertCountsFromApi(page, job);
+  await expect(page.locator('#download-link')).toBeVisible();
+  fail = false;
+  await page.locator('#report-retry').click();
+  await assertReportFromApi(page, job);
+});
+
+test('opção de IA simulada exige clique e seu fallback mantém o resumo e o ZIP', async ({ page }) => {
+  await page.route('**/api/v1/relator', route => route.fulfill({
+    json: {modelo_local: true, modelo: 'modelo-teste:latest'},
+  }));
+  let modelCalls = 0;
+  await page.route('**/api/v1/comparacoes/*/relatorio', async route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    modelCalls++;
+    // Adapter and proposal validation are exercised in Python. This case checks
+    // only the browser behavior when the model returns a validated fallback.
+    const source = await page.request.get(route.request().url());
+    const fallback = await source.json();
+    fallback.fallback_reason = 'tempo_esgotado';
+    await route.fulfill({json: fallback});
+  });
+  await startPage(page);
+  const job = await submit(page);
+  await waitForComplete(page);
+  await expect(page.locator('#report-content')).toBeVisible();
+  await expect(page.locator('#report-model-button')).toBeEnabled();
+  expect(modelCalls).toBe(0);
+  const before = await page.request.get(jobs);
+  const ids = (await before.json()).map((item: {id: string}) => item.id);
+  await page.locator('#report-model-button').click();
+  await expect(page.locator('#report-message')).toContainText('O resumo local está disponível');
+  expect(modelCalls).toBe(1);
+  await expect(page.locator('#report-origin')).toHaveText('Resumo local');
+  await assertCountsFromApi(page, job);
+  await expect(page.locator('#download-link')).toBeVisible();
+  const after = await page.request.get(jobs);
+  expect((await after.json()).map((item: {id: string}) => item.id)).toEqual(ids);
+});
 
 test('320 pixels, navegação acessível e tabela dentro da área rolável', async ({ page }, info) => {
   await page.setViewportSize({ width: 320, height: 740 });
