@@ -14,7 +14,6 @@ python -m radar_quantum_bench run --output resultado-bell.json
 python -m radar_quantum_bench verify resultado-bell.json
 python -m radar_quantum_bench pack resultado-bell.json reproducao-bell.zip
 python -m radar_quantum_bench check-package reproducao-bell.zip
-python -m unittest discover -s tests -v
 ```
 
 O circuito usa H em q₀ e CX de q₀ para q₁. As duas condições usam o mesmo circuito compilado. Em cada condição, são dez repetições de 1.024 medições, com sementes distintas. Os dois aquecimentos ficam registrados separadamente. A ordem de exibição é `c1c0`. Após uma interrupção, execute o comando `run` com o mesmo arquivo e acrescente `--resume`. Cada tentativa fica no histórico. Para experimentar outra semente base, use `--seed` e um novo arquivo.
@@ -74,12 +73,36 @@ sha256sum -c SHA256SUMS
 
 Resultados novos usam o formato 2. O verificador também lê o formato 1 de Bell. A revisão do catálogo fixa os circuitos OpenQASM e a compilação de referência na versão testada. Uma mudança de compilador passa por atualização explícita dessa referência. Uma coleta interrompida só é retomada pelas mesmas fontes e pelo mesmo ambiente que a iniciaram.
 
+## API local, fila e histórico
+
+A terceira entrega permite enviar uma comparação, acompanhar o andamento e baixar o pacote pela API. O banco SQLite e os checkpoints ficam no diretório escolhido. Use Python 3.12 no Linux ou WSL2, com o ambiente virtual já ativado.
+
+```bash
+python -m pip install -r requirements-api.txt
+python -m radar_quantum_bench.local serve --data-dir local-data
+```
+
+Em outro terminal com o mesmo ambiente ativado, inicie o executor apontando para o mesmo diretório:
+
+```bash
+python -m radar_quantum_bench.local worker --data-dir local-data
+```
+
+O servidor atende em `http://127.0.0.1:8000`. A fila aceita até 32 trabalhos ativos e o executor processa um por vez. O esquema local está em `/openapi.json`. Para conferir a instalação completa, execute `python -m unittest discover -s tests -v` após instalar as dependências da API.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/comparacoes   -H 'Content-Type: application/json'   -H 'Idempotency-Key: meu-primeiro-ghz'   -d '{"circuit":"ghz"}'
+```
+
+A resposta traz o `id` da comparação. Use-o nas rotas de consulta, métricas e exportação descritas no [guia da API local](docs/api-local.md). Repetir a chave com a mesma configuração devolve o mesmo trabalho. Após reiniciar o executor, os checkpoints salvos permitem completar as medições pendentes. O [registro deste marco](docs/marco-api.md) reúne as verificações e o próximo trabalho de interface.
+
 ## Documentação
 
 | Para quem quer | Documento |
 | --- | --- |
 | Entender o produto, as entregas, a equipe e o custo | [Plano do MVP](docs/plano-do-mvp.md) |
 | Implementar e validar Bell, GHZ e Bernstein-Vazirani | [Protocolo científico](docs/protocolo-cientifico.md) |
+| Iniciar a API local, executar a fila e recuperar o histórico | [Operação da API](docs/api-local.md) |
 | Definir API, fila, dados e pacote de reprodução | [Arquitetura e contratos](docs/arquitetura.md) |
 | Escolher bibliotecas, repositórios, APIs e sites oficiais | [Guia de integrações quânticas](docs/integracoes.md) |
 | Avaliar licenças, dependências e a necessidade de manter um fork | [Projetos existentes e decisões de reuso](docs/reuso-e-forks.md) |
