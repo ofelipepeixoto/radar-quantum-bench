@@ -19,7 +19,7 @@ Astro permite carregar JavaScript só onde a página precisa de interação. Em 
 ## Como os dados circulam
 
 1. A API recebe o identificador e a revisão do circuito, shots, repetições, perfil de ruído e estratégia de sementes. Valida tudo e cria a comparação e as linhas esperadas de trabalho na mesma transação.
-2. O executor reserva o trabalho com prazo de posse. O identificador da tentativa e um marcador de posse impedem que um executor antigo substitua o resultado de uma tentativa mais recente após uma interrupção. Alternar ideal e ruído conforme o protocolo.
+2. Nesta instalação local, um bloqueio de arquivo mantido pelo sistema operacional permite um único executor por diretório de dados. Ao iniciar sob esse bloqueio, o executor devolve os trabalhos interrompidos à fila e registra as tentativas anteriores. A conclusão exige o identificador da tentativa ainda ativa. Alternar ideal e ruído conforme o protocolo. [Operação e limites desta implementação](api-local.md)
 3. O adaptador converte os bits do provedor para a ordem canônica, preservando também a saída e o mapa originais. As contagens são confirmadas numa transação com o estado, a duração e a referência ao arquivo. Após reinício, reconciliar trabalhos interrompidos e arquivos órfãos. Uma comparação pode ter várias tentativas e apenas um resultado aceito por condição e repetição.
 4. O motor calcula as métricas quando as condições estão completas. O relatório referencia métricas e evidências pelo identificador. O pacote exportado preserva as medições mesmo se o texto precisar ser refeito.
 5. A interface recupera o andamento por consulta periódica. Exibe a última atualização, informa interrupção de conexão e recupera o mesmo pedido ao reabrir a página.
