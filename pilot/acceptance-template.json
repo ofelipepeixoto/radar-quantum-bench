@@ -1,0 +1,11 @@
+{
+  "schema": "rqb-pilot-check/1",
+  "candidate_sha256": null,
+  "source_revision": null,
+  "check": null,
+  "result": null,
+  "basis": "recorded_human_attestation",
+  "observed_on": null,
+  "observer_code": null,
+  "evidence_sha256": null
+}

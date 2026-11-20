@@ -42,7 +42,7 @@ Cada consulta tem prazo total de 20 segundos. A resposta de chat admite até 64 
 
 Uma resposta aprovada registra nome, digest do modelo informado pelo Ollama e versão do Ollama. Não atualize a tag durante o ensaio, pois o digest vem da consulta aos metadados anterior à geração. A mesma comparação reutiliza a seleção já aprovada para aquele nome. Para avaliar outra revisão, escolha uma tag distinta ou crie uma comparação nova. A indisponibilidade posterior do modelo não impede a leitura da seleção guardada e validada.
 
-Esta entrega testou o adaptador com respostas simuladas e um servidor HTTP de teste. A qualidade da seleção e o consumo de memória de um LLM real ainda precisam ser verificados na instalação do laboratório.
+O adaptador também foi exercitado com Qwen2.5 0.5B e Ollama 0.40.16 em CPU, nos três circuitos e no prazo padrão. A resposta compacta seleciona identificadores de frases autorizadas; o servidor conserva os fatos e as seções obrigatórias. A revisão das instruções é 2. O laboratório deve repetir o ensaio em seu ambiente e modelo. [Ensaio real e escopo](marco-aceites.md) · [Comandos do piloto](registro-do-piloto.md)
 
 ## Usar a API
 

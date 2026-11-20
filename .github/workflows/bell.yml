@@ -104,6 +104,13 @@ jobs:
       - name: Ensaiar o pacote extraído e a restauração
         run: |
           "$RUNNER_TEMP/candidate-venv/bin/python" "$RUNNER_TEMP/candidate-extracted/tools/verify_candidate.py" --output "$RUNNER_TEMP/candidate-evidence/candidate-result.json"
+      - name: Conferir o computador e registrar o recibo técnico
+        run: |
+          RQB_EXPECTED_DIGEST="$(cut -d ' ' -f 1 "$RUNNER_TEMP/candidate-evidence/SHA256SUMS")"
+          "$RUNNER_TEMP/candidate-venv/bin/python" "$RUNNER_TEMP/candidate-extracted/tools/verify_workstation.py" --candidate "$RUNNER_TEMP/candidate-evidence/Radar-Quantum-Bench-Candidata.zip" --sha256 "$RQB_EXPECTED_DIGEST" --output "$RUNNER_TEMP/candidate-evidence/workstation-result.json"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m radar_quantum_bench.acceptance --directory "$RUNNER_TEMP/pilot-acceptance" init --candidate "$RUNNER_TEMP/candidate-evidence/Radar-Quantum-Bench-Candidata.zip" --sha256 "$RQB_EXPECTED_DIGEST"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m radar_quantum_bench.acceptance --directory "$RUNNER_TEMP/pilot-acceptance" import-technical --receipt "$RUNNER_TEMP/candidate-evidence/workstation-result.json"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m radar_quantum_bench.acceptance --directory "$RUNNER_TEMP/pilot-acceptance" status --output "$RUNNER_TEMP/candidate-evidence/pilot-status.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: candidata-revisao-e-evidencias

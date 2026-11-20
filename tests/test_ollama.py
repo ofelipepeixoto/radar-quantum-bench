@@ -18,7 +18,7 @@ BASE = {
     "limitacoes": [{"frase_id": "simulacao", "fato_ids": ["origem"]}],
     "proximo_teste": None,
 }
-INPUT = {"fatos": [{"id": "shots", "valor": 20480, "unidade": "medições"}],
+INPUT = {"fatos": [{"id": "shots", "valor": 20480, "unidade": "medições", "condicao": None, "precisao": 0}],
          "proposta_base": BASE}
 MODEL = {"name": "teste:latest", "model": "teste:latest", "size": 1024,
          "digest": "a" * 64}
@@ -76,7 +76,7 @@ class OllamaTests(unittest.TestCase):
                 Response({"models": [MODEL if model is None else model]}),
                 Response({"details": {"format": "gguf"}} if shown is None else shown),
                 Response({"model": "teste:latest", "done": True,
-                          "message": {"role": "assistant", "content": json.dumps(BASE)}})
+                          "message": {"role": "assistant", "content": json.dumps({"observacoes": ["observado"]})}})
                 if chat is None else chat]
 
     def install(self, responses):
@@ -120,8 +120,14 @@ class OllamaTests(unittest.TestCase):
         self.assertEqual(body["options"]["num_thread"], 1)
         schema = body["format"]
         self.assertIs(schema["additionalProperties"], False)
-        self.assertEqual(schema["properties"]["observacoes"]["items"]["enum"], BASE["observacoes"])
-        self.assertEqual(json.loads(body["messages"][1]["content"]), INPUT)
+        self.assertEqual(schema["properties"]["observacoes"]["items"]["enum"], ["observado"])
+        sent = json.loads(body["messages"][1]["content"])
+        self.assertEqual(sent["fatos"], {"colunas": ["id", "valor", "unidade", "condicao", "precisao"],
+                                         "linhas": [["shots", 20480, "medições", None, 0]]})
+        self.assertEqual(sent["observacoes_permitidas"], [{"id": "observado", "fato_ids": ["ideal.valid_fraction"]}])
+        self.assertEqual(set(schema["properties"]), {"observacoes"})
+        self.assertEqual(body["options"]["num_predict"], 256)
+        self.assertEqual(body["options"]["num_ctx"], 4096)
         self.assertTrue(all(connection.closed for connection in self.connections))
 
     def test_remote_alias_is_rejected_before_facts_are_sent(self):
@@ -188,7 +194,7 @@ class OllamaTests(unittest.TestCase):
     def test_chat_envelope_and_inner_json_are_checked(self):
         examples = [
             {"model": "outro:latest", "done": True,
-             "message": {"role": "assistant", "content": json.dumps(BASE)}},
+             "message": {"role": "assistant", "content": json.dumps({"observacoes": ["observado"]})}},
             {"done": False, "message": {"role": "assistant", "content": "{}"}},
             {"done": True, "message": {"role": "user", "content": "{}"}},
             {"done": True, "message": {"role": "assistant", "content": "{}", "tool_calls": [{}]}},
@@ -203,6 +209,23 @@ class OllamaTests(unittest.TestCase):
                                     "resposta_invalida")
         oversized = Response({}, raw=b"x" * (64 * 1024 + 1))
         self.assert_failure(self.responses(chat=oversized), "resposta_invalida")
+
+    def test_compact_wire_rejects_unknown_repeated_or_extra_content(self):
+        for value in ({}, {"observacoes": []}, {"observacoes": ["foreign"]},
+                      {"observacoes": ["observado", "observado"]}, {"observacoes": [True]},
+                      {"observacoes": ["observado"], "resumo": "INTERNAL_SECRET"}, BASE):
+            with self.subTest(wire=value):
+                response = Response({"model": "teste:latest", "done": True,
+                                     "message": {"role": "assistant", "content": json.dumps(value)}})
+                self.assert_failure(self.responses(chat=response), "resposta_invalida")
+
+    def test_source_pointers_and_extra_metadata_are_not_sent_to_the_model(self):
+        source = deepcopy(INPUT)
+        source["fatos"][0].update(origem="PRIVATE_PATH_MARKER", calculo="INTERNAL_SECRET")
+        with self.install(self.responses()):
+            self.assertEqual(OllamaAdvisor("teste").propose(source), BASE)
+        self.assertNotIn("PRIVATE_PATH_MARKER", json.dumps(self.calls[-1][2]))
+        self.assertNotIn("INTERNAL_SECRET", json.dumps(self.calls[-1][2]))
 
     def test_invalid_input_does_not_send_http(self):
         with patch("radar_quantum_bench.ollama.http.client.HTTPConnection") as connect:
@@ -254,7 +277,7 @@ class OllamaTests(unittest.TestCase):
                 else:
                     self.send_json({"model": body["model"], "done": True, "message": {
                         "role": "assistant", "content": json.dumps(
-                            json.loads(body["messages"][1]["content"])["proposta_base"]
+                            {"observacoes": [json.loads(body["messages"][1]["content"])["observacoes_permitidas"][0]["id"]]}
                         ),
                     }})
 
