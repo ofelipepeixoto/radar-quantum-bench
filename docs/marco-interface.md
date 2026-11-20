@@ -27,7 +27,7 @@ Com a comparação concluída, a tela apresenta a taxa de resultados no conjunto
 
 Fila cheia e parte dos erros de comunicação são respostas interceptadas explicitamente nos testes. As medições, o histórico, a perda de resposta após aceitação e o download usam o serviço real. As verificações automáticas e o percurso por teclado cobrem parte do aceite de acessibilidade. Os testes com leitores de tela e com participantes do laboratório ainda pertencem ao piloto.
 
-O ambiente local usou Node 24.22.3, npm 11.19.1, Astro 7.4.13 e Playwright 1.65.1. O build recebe as fontes Geist e IBM Plex Mono com suas licenças. A integração contínua repete a instalação, o build, os testes Python e o fluxo pelo navegador usando o Chromium distribuído pelo Playwright.
+O ambiente local usou Node 24.22.3, npm 11.19.1, Astro 7.4.13 e Playwright 1.65.1. O build recebe as fontes Geist e IBM Plex Mono com suas licenças. A integração contínua repete a instalação, o build, os testes Python e o fluxo pelo navegador usando o Google Chrome disponível na imagem oficial do runner.
 
 A revisão do código verificou origem, conteúdo estático e gravação idempotente. A interface escreve os dados em elementos de texto, sem interpretar respostas da API como HTML. Os cabeçalhos restringem scripts, fontes e conexões à própria origem. Somente a pasta compilada é disponibilizada pelo host estático, com testes para arquivos ausentes e fora dessa pasta. Os artefatos científicos anteriores preservam seus hashes.
 
