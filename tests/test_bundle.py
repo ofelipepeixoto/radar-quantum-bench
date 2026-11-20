@@ -18,7 +18,7 @@ class BellPackageTests(unittest.TestCase):
         self.source = self.folder / "checkout"
         self.result = self.folder / "bell.json"
         self.archive = self.folder / "bell.zip"
-        for name in bundle._SHIPPED:
+        for name in bundle._CIRCUIT_V2.project_files:
             path = self.source / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"# {name}\n", encoding="utf-8")
@@ -49,7 +49,12 @@ class BellPackageTests(unittest.TestCase):
         bundle.check_bundle(self.archive)
         self.assertEqual(self.validator.call_count, 2)
         with ZipFile(self.archive) as archive:
-            self.assertEqual(set(archive.namelist()), bundle._FILES | {"manifest.json"})
+            self.assertEqual(set(archive.namelist()), bundle._BELL_V1.members)
+            self.assertEqual(json.loads(archive.read("manifest.json"))["format"],
+                             "radar-quantum-bench/bell-package-v1")
+            self.assertNotIn("tests/test_catalog.py", archive.namelist())
+            self.assertNotIn("examples/bell.json", archive.namelist())
+            self.assertNotIn(b"--circuit", archive.read("REPRODUZIR.md"))
             self.assertEqual(archive.read("bell.json"), self.result.read_bytes())
             self.assertNotIn(".env", archive.namelist())
             self.assertNotIn("tests/extra.py", archive.namelist())
@@ -59,6 +64,56 @@ class BellPackageTests(unittest.TestCase):
         copy = self.folder / "copy.zip"
         bundle.build_bundle(self.result, copy)
         self.assertEqual(self.archive.read_bytes(), copy.read_bytes())
+
+    def test_v2_payload_layout_and_guide_roundtrip_for_each_circuit(self):
+        self.document["schema_version"] = 2
+        for circuit in ("ghz", "bv", "bell"):
+            with self.subTest(circuit=circuit):
+                self.document["config"]["circuit"] = circuit
+                self.write_result()
+                path = self.folder / f"{circuit}-v2.zip"
+                bundle.build_bundle(self.result, path)
+                bundle.check_bundle(path)
+                with ZipFile(path) as archive:
+                    self.assertNotIn("bell.json", archive.namelist())
+                    self.assertIn("tests/test_catalog.py", archive.namelist())
+                    self.assertEqual(archive.read("examples/bell.json"),
+                                     (self.source / "examples" / "bell.json").read_bytes())
+                    self.assertEqual(archive.read("result.json"), self.result.read_bytes())
+                    self.assertEqual(json.loads(archive.read("manifest.json"))["format"],
+                                     "radar-quantum-bench/circuit-package-v2")
+                    guide = archive.read("REPRODUZIR.md").decode()
+                    self.assertIn(f"run --circuit {circuit} --seed 215", guide)
+                    self.assertIn("verify result.json", guide)
+
+    def test_v2_member_names_cannot_hide_a_v1_result_or_an_unknown_format(self):
+        self.document.update(schema_version=2)
+        self.document["config"]["circuit"] = "ghz"
+        self.write_result()
+        bundle.build_bundle(self.result, self.archive)
+        with ZipFile(self.archive) as archive:
+            contents = {name: archive.read(name) for name in archive.namelist()}
+        for change in ("schema", "format", "catalog", "legacy_fixture"):
+            with self.subTest(change=change):
+                items = contents.copy()
+                manifest = json.loads(items["manifest.json"])
+                if change == "schema":
+                    wrong = dict(self.document, schema_version=1, config={"circuit": "bell", "base_seed": 215})
+                    items["result.json"] = json.dumps(wrong).encode()
+                    manifest["sha256"]["result.json"] = hashlib.sha256(items["result.json"]).hexdigest()
+                elif change == "format":
+                    manifest["format"] = "radar-quantum-bench/circuit-package-v9"
+                else:
+                    name = "tests/test_catalog.py" if change == "catalog" else "examples/bell.json"
+                    del items[name]
+                    del manifest["sha256"][name]
+                items["manifest.json"] = json.dumps(manifest).encode()
+                path = self.folder / f"wrong-{change}.zip"
+                with ZipFile(path, "w") as archive:
+                    for name, contents_bytes in items.items():
+                        archive.writestr(name, contents_bytes)
+                with self.assertRaises(ValueError):
+                    bundle.check_bundle(path)
 
     def test_refuses_overwrite_without_partial_file(self):
         self.archive.write_bytes(b"existing archive")

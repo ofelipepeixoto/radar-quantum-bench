@@ -1,6 +1,6 @@
 # Radar Quantum Bench
 
-Bancada em português para comparar experimentos quânticos e conferir como cada número foi obtido. O primeiro marco executa o circuito de Bell em Qiskit Aer na CPU, uma vez com leitura ideal e outra com erro de leitura independente de 2% por bit. GHZ e Bernstein-Vazirani continuam no plano.
+Bancada em português para comparar experimentos quânticos e conferir como cada número foi obtido. O catálogo executa Bell, GHZ e Bernstein-Vazirani em Qiskit Aer na CPU. Cada circuito é comparado sob leitura ideal e sob erro de leitura independente de 2% por bit.
 
 ## Rodar Bell
 
@@ -36,6 +36,44 @@ python3.12 -m radar_quantum_bench verify examples/bell.json
 
 O comando `pack` inclui as fontes, os testes, o arquivo de dependências, as medições, os circuitos e um guia de reprodução. Para comparar ambientes, confira primeiro o conteúdo e as versões, depois as contagens por semente. A coleta é uma simulação científica local na base Z.
 
+## Catálogo de três circuitos
+
+O segundo marco acrescenta GHZ e Bernstein-Vazirani. Na raiz do projeto, com o ambiente ativado, execute:
+
+```bash
+python -m radar_quantum_bench run --circuit ghz --output resultado-ghz.json
+python -m radar_quantum_bench run --circuit bv --output resultado-bv.json
+python -m radar_quantum_bench verify resultado-ghz.json
+python -m radar_quantum_bench pack resultado-ghz.json reproducao-ghz.zip
+```
+
+São dez repetições de 1.024 medições em cada condição por circuito. Os seis conjuntos somam 61.440 medições avaliadas. Os seis aquecimentos são excluídos. O BV mede os três qubits de dados e usa um quarto qubit auxiliar. O resultado ideal é `110`, exibido na ordem `c2c1c0`. As sementes padrão diferem entre os circuitos.
+
+| Circuito | Resultado no conjunto esperado, ideal | Resultado no conjunto esperado, com ruído | Previsão teórica com ruído |
+| --- | ---: | ---: | ---: |
+| Bell | 100% | 96,2207% | 96,08% |
+| GHZ | 100% | 94,4629% | 94,12% |
+| Bernstein-Vazirani | 100% | 94,4043% | 94,1192% |
+
+A [coleta do catálogo](examples/catalogo) registra as contagens completas, os tempos, as versões e as sementes. O [registro do segundo marco](docs/marco-catalogo.md) informa o que foi verificado e o próximo trabalho previsto.
+
+## Baixar os pacotes de reprodução
+
+| Experimento | Pacote com código, testes, dados e guia |
+| --- | --- |
+| Bell, primeiro marco | [Radar-Quantum-Bench-Bell.zip](artifacts/Radar-Quantum-Bench-Bell.zip) |
+| GHZ | [Radar-Quantum-Bench-GHZ.zip](artifacts/Radar-Quantum-Bench-GHZ.zip) |
+| Bernstein-Vazirani | [Radar-Quantum-Bench-BV.zip](artifacts/Radar-Quantum-Bench-BV.zip) |
+
+O ZIP de Bell preserva exatamente a versão entregue no primeiro marco. Os novos pacotes incluem a amostra Bell antiga para conferir compatibilidade. Os [SHA-256 publicados](artifacts/SHA256SUMS) permitem conferir os downloads:
+
+```bash
+cd artifacts
+sha256sum -c SHA256SUMS
+```
+
+Resultados novos usam o formato 2. O verificador também lê o formato 1 de Bell. A revisão do catálogo fixa os circuitos OpenQASM e a compilação de referência na versão testada. Uma mudança de compilador passa por atualização explícita dessa referência. Uma coleta interrompida só é retomada pelas mesmas fontes e pelo mesmo ambiente que a iniciaram.
+
 ## Documentação
 
 | Para quem quer | Documento |
@@ -50,7 +88,7 @@ O comando `pack` inclui as fontes, os testes, o arquivo de dependências, as med
 | Proteger componentes privados e definir o que bloqueia a publicação | [Proteção do produto](docs/protecao-do-produto.md) |
 | Verificar os relatórios de IA e preparar a primeira versão | [Qualidade e liberação](docs/qualidade-e-release.md) |
 
-A comparação de Bell já roda localmente. O próximo marco científico acrescenta GHZ e Bernstein-Vazirani ao mesmo protocolo. A conexão física prevista é a IBM Quantum após a validação do piloto.
+As três comparações já rodam localmente. O próximo marco integra a execução a uma API local com fila, histórico e exportação. A conexão física prevista é a IBM Quantum após a validação do piloto.
 
 ## Começar o trabalho
 
