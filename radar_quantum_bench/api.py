@@ -91,7 +91,7 @@ def create_app(data_dir: Path, capacity: int = 32) -> FastAPI:
 
     @app.get("/api/v1/comparacoes")
     def history(limit: Annotated[int, Field(ge=1, le=100)] = 20,
-                offset: Annotated[int, Field(ge=0)] = 0):
+                offset: Annotated[int, Field(ge=0, le=2147483647)] = 0):
         return store.list_jobs(limit=limit, offset=offset)
 
     @app.get("/api/v1/comparacoes/{job_id}")

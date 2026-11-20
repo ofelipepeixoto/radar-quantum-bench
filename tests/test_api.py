@@ -44,6 +44,8 @@ class LocalApiTests(unittest.TestCase):
         history = self.client.get(JOBS)
         self.assert_status(history, 200)
         self.assertEqual(history.json(), [])
+        for query in ("limit=101", "limit=0", "offset=-1", "offset=" + "9" * 100):
+            self.assert_status(self.client.get(JOBS + "?" + query), 422)
 
     def test_openapi_is_available_without_hosted_documentation(self):
         for route in ("/docs", "/redoc"):

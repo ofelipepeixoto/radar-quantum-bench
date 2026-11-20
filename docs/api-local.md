@@ -17,7 +17,7 @@ A API conserva a especificação em `/openapi.json`. As páginas que carregariam
 | GET /health | Indica que a API respondeu. O executor é um processo separado. |
 | GET /api/v1/experimentos | Bell, GHZ e BV, referências analíticas, qubits e configurações padrão |
 | POST /api/v1/comparacoes | Recebe circuito e semente opcional e devolve 202 com ID e estado |
-| GET /api/v1/comparacoes?limit=20&offset=0 | Histórico por página, mais recentes primeiro. Limite de até 100 por consulta. |
+| GET /api/v1/comparacoes?limit=20&offset=0 | Histórico por página, mais recentes primeiro. Limite de até 100 por consulta e offset de 0 a 2147483647. |
 | GET /api/v1/comparacoes/{id} | Estado, configuração, tentativas e progresso científico quando já houver checkpoint |
 | GET /api/v1/comparacoes/{id}/metricas | Resumo das medições disponíveis, inclusive quando o ensaio estiver incompleto |
 | POST /api/v1/comparacoes/{id}/retentativas | Devolve um trabalho com falha à fila. A próxima execução preserva os checkpoints válidos. |
