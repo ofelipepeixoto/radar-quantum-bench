@@ -67,3 +67,7 @@ Prosseguir para uma segunda turma se pelo menos quatro das cinco pessoas exporta
 3. Priorizar integração adicional somente se o parceiro precisar dela para repetir uma tarefa. A primeira candidata para validação independente local é PennyLane. A primeira alternativa comercial multi-hardware a avaliar é Amazon Braket.
 
 As escolhas de engenharia estão em [Arquitetura](arquitetura.md). Os fornecedores e interfaces pesquisados estão no [Guia de integrações](integracoes.md). Os roteiros de campo e liberação estão em [Piloto e telas](piloto-e-telas.md) e [Qualidade](qualidade-e-release.md).
+
+O [plano paralelo dos 12 produtos](ecossistema-quantico.md) registra as oportunidades de expansão, os compradores e a evidência necessária para abrir uma nova frente. As seis semanas acima são dedicadas ao Radar Quantum Bench.
+
+**Proteção da implementação.** Na semana 1, classificar o que será público ou reservado. Na semana 4, verificar o que a interface e a exportação entregam ao navegador. Na semana 5, bloquear a liberação de qualquer pacote que exponha ativo reservado. O responsável pela liberação guarda a evidência do pacote aprovado. [Critérios de proteção do produto](protecao-do-produto.md)

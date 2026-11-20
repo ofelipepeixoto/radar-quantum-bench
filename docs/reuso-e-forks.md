@@ -1,0 +1,23 @@
+# Projetos avaliados e decisão sobre forks
+
+**Decisão de 20 de novembro de 2026.** Usar Qiskit Aer como dependência e publicar no Radar Quantum Bench o protocolo, a comparação visual, os testes e os relatórios. Os seis projetos oferecem um pacote ou documentação suficiente para o uso previsto. Nenhum exigiu fork.
+
+A revisão pelo GitHub conferiu o último commit da branch padrão, o README e a declaração de licença de cada projeto. Os links abaixo preservam o commit consultado. Essa revisão é documental. A escolha da versão a instalar depende dos testes do piloto.
+
+| Projeto | Como usar no Radar Quantum Bench | Evidência no commit consultado |
+| --- | --- | --- |
+| **Qiskit Aer** | `qiskit-aer` será o simulador do MVP. Instalar uma versão publicada e fixar a versão e o hash do pacote. A equipe do Aer informa que sua manutenção está concentrada em correções críticas. A atualização passa pelos três circuitos de referência. | [README](https://github.com/Qiskit/qiskit-aer/blob/5cb4a838dc1d15b2bafcddeb5ad6d09ff9391adf/README.md) · [Apache-2.0](https://github.com/Qiskit/qiskit-aer/blob/5cb4a838dc1d15b2bafcddeb5ad6d09ff9391adf/LICENSE.txt) · `5cb4a838` |
+| **MQT Bench** | Usar o catálogo para uma verificação independente dos circuitos GHZ e Bernstein-Vazirani. Antes de comparar, conferir número de qubits, segredo e medições. O pacote `mqt.bench` pode ficar nas dependências de teste. | [README](https://github.com/munich-quantum-toolkit/bench/blob/ea67e9d7cd41b8d4935c7a4ee6c1bcbe20166025/README.md) · [MIT](https://github.com/munich-quantum-toolkit/bench/blob/ea67e9d7cd41b8d4935c7a4ee6c1bcbe20166025/LICENSE) · `ea67e9d7` |
+| **QED-C Application-Oriented Benchmarks** | Estudar como os exemplos relacionam resultados do algoritmo e medidas de desempenho. A equipe descreve a coleção como protótipos. O piloto calcula e documenta suas próprias métricas. | [README](https://github.com/SRI-International/QC-App-Oriented-Benchmarks/blob/8e010fecf3e03ca8056c554a5a38ca7a49d0e7b3/README.md) · [Apache-2.0](https://github.com/SRI-International/QC-App-Oriented-Benchmarks/blob/8e010fecf3e03ca8056c554a5a38ca7a49d0e7b3/LICENSE) · `8e010fec` |
+| **D-Wave Ocean SDK** | Reservar a integração para um estudo de otimização. Um primeiro teste pode usar `dimod.ExactSolver` num problema pequeno com ótimo conhecido. Manter métricas de energia e de solução no protocolo daquele estudo. | [README](https://github.com/dwavesystems/dwave-ocean-sdk/blob/bfc5c8e62cf9262db50a765b015fa9f21b327e2a/README.rst) · [Apache-2.0](https://github.com/dwavesystems/dwave-ocean-sdk/blob/bfc5c8e62cf9262db50a765b015fa9f21b327e2a/LICENSE) · `bfc5c8e6` |
+| **Qiskit IonQ Provider** | Consultar a interface para um futuro adaptador, se um laboratório tiver acesso à IonQ. A primeira integração física prevista continua sendo IBM. Instalar `qiskit-ionq` somente quando o adaptador tiver um teste de aceitação e um alvo autorizado. | [README](https://github.com/qiskit-community/qiskit-ionq/blob/fbc89c2bedd3add7369fbaa78a0262ca3076e4b7/README.md) · [Apache-2.0](https://github.com/qiskit-community/qiskit-ionq/blob/fbc89c2bedd3add7369fbaa78a0262ca3076e4b7/LICENSE.txt) · `fbc89c2b` |
+| **SupermarQ** | Consultar a suíte para pensar em novos circuitos e na pontuação de cada tarefa. O pacote `supermarq` está em `supermarq-benchmarks`, no monorepositório da Infleqtion. A expansão pode ser avaliada com os laboratórios depois do piloto. | [README](https://github.com/Infleqtion/client-superstaq/blob/9b013632844fc958186593017f7e35064908a6b4/supermarq-benchmarks/README.md) · [Apache-2.0](https://github.com/Infleqtion/client-superstaq/blob/9b013632844fc958186593017f7e35064908a6b4/supermarq-benchmarks/pyproject.toml) · `9b013632` |
+
+## Como manter o reuso verificável
+
+1. O arquivo de dependências fixa a versão testada. O manifesto de cada execução registra as versões efetivamente carregadas. O commit de consulta na tabela serve para localizar a documentação.
+2. Usar entradas e saídas públicas do pacote. Guardar no repositório do Radar apenas o adaptador, os testes e material próprio. Ao incorporar um trecho de terceiros, registrar arquivo de origem, commit, licença, autoria e avisos de distribuição aplicáveis.
+3. Reavaliar um fork se um caso mínimo demonstrar uma falha que impeça um critério de aceite, nenhuma versão publicada resolver e uma solução pelo adaptador comprometer o resultado. Documentar a falha, procurar correção no projeto original e estimar quem manteria a divergência.
+
+Os critérios de comparação estão no [protocolo científico](protocolo-cientifico.md). As condições para usar serviços remotos estão no [plano de integrações](integracoes.md).
+

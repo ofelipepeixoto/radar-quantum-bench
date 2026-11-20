@@ -50,3 +50,5 @@ Antes de cada atualização e diariamente durante o piloto, criar cópia consist
 2. **Ensaio completo.** Outra pessoa deverá executar um dos três modelos, inspecionar as duas condições, baixar os dados e reproduzir as métricas. Repetir o ensaio com falha da IA e com uma execução interrompida.
 3. **Decisão de piloto.** Bloquear a distribuição se o ensaio encontrar perda de contagens, acesso indevido, segredo exposto, métrica incorreta, afirmação sem evidência ou falha no teste de restauração. Registrar os critérios aprovados, pendentes, responsáveis e limitações conhecidas.
 4. **Reversão.** Se um bloqueio aparecer durante o piloto, suspender novas execuções afetadas e seguir o procedimento de recuperação. Uma correção gera nova candidata. Repetir os testes do componente alterado e o ensaio completo antes de reabrir o piloto.
+
+A revisão de cada artefato distribuído também precisa cumprir o [controle de exposição de componentes privados](protecao-do-produto.md). Incluir o resultado dessa revisão no aceite da versão candidata.
