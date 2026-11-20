@@ -1,4 +1,4 @@
-name: Bell em CPU
+name: Catálogo em CPU
 on: [pull_request, workflow_dispatch]
 permissions:
   contents: read
@@ -15,9 +15,23 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
-      - name: Conferir a coleta publicada e formar um pacote novo
+      - name: Conferir a amostra Bell e os ZIPs publicados
         run: |
           python -m radar_quantum_bench verify examples/bell.json
-          python -m radar_quantum_bench run --output "$RUNNER_TEMP/bell.json"
-          python -m radar_quantum_bench pack "$RUNNER_TEMP/bell.json" "$RUNNER_TEMP/bell.zip"
-          python -m radar_quantum_bench check-package "$RUNNER_TEMP/bell.zip"
+          (cd artifacts && sha256sum -c SHA256SUMS)
+          for name in Bell GHZ BV; do
+            python -m radar_quantum_bench check-package "artifacts/Radar-Quantum-Bench-$name.zip"
+          done
+      - name: Executar e empacotar os três circuitos
+        run: |
+          for circuit in bell ghz bv; do
+            python -m radar_quantum_bench verify "examples/catalogo/$circuit.json"
+            python -m radar_quantum_bench run --circuit "$circuit" --output "$RUNNER_TEMP/$circuit.json"
+            python -m radar_quantum_bench pack "$RUNNER_TEMP/$circuit.json" "$RUNNER_TEMP/$circuit.zip"
+            python -m radar_quantum_bench check-package "$RUNNER_TEMP/$circuit.zip"
+          done
+      - name: Rodar a suíte dentro do pacote GHZ
+        run: |
+          python -m zipfile -e artifacts/Radar-Quantum-Bench-GHZ.zip "$RUNNER_TEMP/pacote-ghz"
+          cd "$RUNNER_TEMP/pacote-ghz"
+          python -m unittest discover -s tests -v

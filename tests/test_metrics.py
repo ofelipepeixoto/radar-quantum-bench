@@ -1,6 +1,8 @@
+import json
 import unittest
+from pathlib import Path
 
-from radar_quantum_bench.metrics import EXPECTED, summarize
+from radar_quantum_bench.metrics import EXPECTED, specifications, summarize, theoretical_probabilities
 
 
 def attempt(counts=None, **overrides):
@@ -19,6 +21,58 @@ def attempt(counts=None, **overrides):
 
 
 class MetricsTests(unittest.TestCase):
+    def test_frozen_v1_example_still_matches_exactly(self):
+        path = Path(__file__).resolve().parents[1] / "examples" / "bell.json"
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        shots = doc["config"]["shots"]
+        repetitions = doc["config"]["repetitions"]
+        self.assertEqual(theoretical_probabilities("bell"), doc["theoretical_probabilities"])
+        self.assertEqual(summarize(doc["attempts"], shots, repetitions), doc["summary"])
+        self.assertEqual(summarize(doc["attempts"], shots, repetitions, "bell"), doc["summary"])
+
+    def test_ghz_theory_and_metrics_match_the_independent_reference(self):
+        counts = dict.fromkeys(("001", "010", "011", "100", "101", "110"), 98)
+        counts.update({"000": 4706, "111": 4706})
+        theory = theoretical_probabilities("ghz")
+        self.assertEqual(theory["readout_2pct"], {word: n / 10000 for word, n in counts.items()})
+        spec = specifications("ghz")
+        self.assertEqual((spec["qubits"], spec["measured"]), (3, 3))
+        self.assertEqual([p for p in theory["ideal"].values() if p], [0.5, 0.5])
+        source = [
+            attempt({"000": 5000, "111": 5000}),
+            attempt(counts, condition="readout_2pct"),
+        ]
+        result = summarize(source, 10000, 1, "ghz")
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["conditions"]["ideal"]["tvd"], 0)
+        row = result["conditions"]["readout_2pct"]
+        self.assertEqual(row["valid_fraction"], 0.9412)
+        self.assertEqual(row["tvd"], 0.0588)
+
+    def test_bv_uses_secret_110_and_excludes_unmeasured_auxiliary_qubit(self):
+        counts = {"110": 117649, "010": 2401, "100": 2401, "111": 2401,
+                  "000": 49, "011": 49, "101": 49, "001": 1}
+        spec = specifications("bv")
+        self.assertEqual((spec["qubits"], spec["measured"]), (4, 3))
+        self.assertEqual({w for w, p in spec["ideal"].items() if p}, {"110"})
+        self.assertEqual(set(spec["words"]), set(counts))
+        theory = theoretical_probabilities("bv")
+        self.assertEqual(theory["readout_2pct"], {word: n / 125000 for word, n in counts.items()})
+        source = [attempt({"110": 125000}), attempt(counts, condition="readout_2pct")]
+        result = summarize(source, 125000, 1, circuit="bv")
+        self.assertTrue(result["complete"])
+        self.assertEqual(result["conditions"]["ideal"]["tvd"], 0)
+        row = result["conditions"]["readout_2pct"]
+        self.assertEqual(row["valid_fraction"], 0.941192)
+        self.assertEqual(row["tvd"], 0.058808)
+        with self.assertRaises(ValueError):
+            summarize([attempt({"0110": 10})], 10, 1, "bv")
+
+    def test_invalid_circuit_is_rejected_even_with_empty_log(self):
+        for invalid in (None, ["bell"], "other"):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                summarize([], 10, 1, circuit=invalid)
+
     def test_theoretical_conditions_and_reference(self):
         records = [
             attempt({"00": 1250, "11": 1250}),

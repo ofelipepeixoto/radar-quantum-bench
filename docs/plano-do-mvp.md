@@ -2,7 +2,7 @@
 
 **Decisão de produto.** Construir primeiro uma bancada local de comparação para professores e laboratórios de computação quântica. A primeira promessa é concreta: um pesquisador roda duas condições, outra pessoa abre o pacote e confere os números sem pedir o notebook original. O tempo para chegar a essa entrega e a capacidade de reproduzi-la vão orientar a decisão comercial.
 
-**Estágio em 20/11/2026.** Planejamento inicial. Os prazos, custos e metas a seguir são premissas para o piloto. O protocolo já define o que deverá ser medido. Os resultados do software dependerão da implementação.
+**Estágio em 20/11/2026.** Bell já foi integrado à branch principal. O catálogo de Bell, GHZ e Bernstein-Vazirani foi implementado e executado localmente, com 61.440 medições avaliadas. Os marcos seguintes tratam de API local, histórico, interface e piloto. Os prazos da tabela são estimativas de trabalho. [Evidências do catálogo](marco-catalogo.md)
 
 ## Entrega da primeira versão
 

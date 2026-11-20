@@ -47,7 +47,7 @@ class BellCliTests(unittest.TestCase):
 
     def test_run_records_circuit_measurements_and_warmups(self):
         data = self.document
-        self.assertEqual(data["schema_version"], 1)
+        self.assertEqual(data["schema_version"], 2)
         self.assertEqual(data["config"]["shots"], SHOTS)
         self.assertEqual(data["config"]["repetitions"], REPETITIONS)
         logical = data["environment"]["logical_qasm"]
