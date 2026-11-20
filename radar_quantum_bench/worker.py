@@ -6,13 +6,17 @@ from math import isfinite
 from time import sleep
 
 from . import experiment
+from .execution import ExecutionFailure, WorkerLimits, execute_job
 from .store import Store
 
 
-def run_worker(store: Store, once: bool = False, poll_seconds: float = 1.0) -> int:
+def run_worker(store: Store, once: bool = False, poll_seconds: float = 1.0,
+               limits: WorkerLimits | None = None) -> int:
     """Recover interrupted jobs and consume the queue; once limits work to one job."""
     if not isfinite(poll_seconds) or poll_seconds < 0:
         raise ValueError("O intervalo de consulta precisa ser finito e não negativo.")
+    if limits is not None and not isinstance(limits, WorkerLimits):
+        raise ValueError("Limites de execução inválidos.")
 
     # Keep this inode in place: removing the file would allow competing locks.
     with (store.root / "worker.lock").open("a") as lock:
@@ -34,11 +38,16 @@ def run_worker(store: Store, once: bool = False, poll_seconds: float = 1.0) -> i
             result_digest = None
             try:
                 path = store.result_path(job["id"])
-                experiment.run(
-                    path, base_seed=job["base_seed"], resume=path.exists(),
-                    circuit=job["circuit"],
-                )
+                if limits is None:
+                    experiment.run(
+                        path, base_seed=job["base_seed"], resume=path.exists(),
+                        circuit=job["circuit"],
+                    )
+                else:
+                    execute_job(store, job, limits, lock_fd=lock.fileno())
                 result_digest = sha256(path.read_bytes()).hexdigest()
+            except ExecutionFailure as exc:
+                error_code = exc.code
             except Exception as exc:
                 error_code = type(exc).__name__
             # Process interruptions and failures to commit the outcome leave a

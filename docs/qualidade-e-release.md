@@ -8,9 +8,11 @@ O servidor aceitará os três circuitos versionados do catálogo, Bell, GHZ e Be
 
 | Parâmetro | Padrão | Limite por comparação |
 | --- | --- | --- |
-| Shots por repetição e condição | 1.024 | Até 4.096 |
-| Repetições por condição | 10 | Até 20 |
-| Medições avaliadas nas duas condições, sem aquecimento | 20.480 | Até 163.840 |
+| Shots por repetição e condição | 1.024 | 1.024 nesta versão |
+| Repetições por condição | 10 | 10 nesta versão |
+| Medições avaliadas nas duas condições, sem aquecimento | 20.480 | 20.480 nesta versão |
+
+Os tetos anteriormente planejados de 4.096 shots e 20 repetições pertencem a uma evolução do contrato. A API atual aceita a configuração fixa acima. O executor da CLI aplica 120 segundos por comparação e 2.048 MiB de memória virtual por padrão, com parâmetros explícitos para ajuste. [Limites, recibos e evidências da candidata](marco-candidata.md)
 
 O ensaio de referência utilizará a configuração padrão definida no [protocolo científico](protocolo-cientifico.md). Guardar outras configurações como experimentos distintos e aplicar o limite de recursos também ao aquecimento. Validar inteiros positivos, parâmetros permitidos e versão do modelo antes de criar o trabalho. Aceitar somente o corpo de requisição previsto. Começar o piloto com um trabalho ativo por executor. Medir tempo e memória no ambiente escolhido, registrar seus tetos antes do piloto e verificar o encerramento de trabalhos que os excedam. Limitar a fila e devolver uma resposta de capacidade esgotada que permita tentar depois.
 

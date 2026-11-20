@@ -67,3 +67,45 @@ jobs:
           name: interface-browser
           path: web/test-results
           retention-days: 7
+  candidata:
+    needs: [reproducao, interface]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.22.3'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Preparar ambiente Python separado
+        run: |
+          python -m venv "$RUNNER_TEMP/candidate-venv"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m pip install --require-hashes -r requirements-api.txt
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m pip check
+          "$RUNNER_TEMP/candidate-venv/bin/python" tools/inventory_dependencies.py --check
+      - name: Compilar com as versões travadas
+        run: npm ci && npm run build
+        working-directory: web
+      - name: Gerar e conferir a candidata de revisão
+        run: |
+          mkdir -p "$RUNNER_TEMP/candidate-evidence"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m radar_quantum_bench.release build --revision "$(git rev-parse HEAD)" --output "$RUNNER_TEMP/candidate-evidence/Radar-Quantum-Bench-Candidata.zip"
+          (cd "$RUNNER_TEMP/candidate-evidence" && sha256sum Radar-Quantum-Bench-Candidata.zip > SHA256SUMS && sha256sum -c SHA256SUMS)
+          RQB_EXPECTED_DIGEST="$(cut -d ' ' -f 1 "$RUNNER_TEMP/candidate-evidence/SHA256SUMS")"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m radar_quantum_bench.release verify "$RUNNER_TEMP/candidate-evidence/Radar-Quantum-Bench-Candidata.zip" --sha256 "$RQB_EXPECTED_DIGEST"
+          "$RUNNER_TEMP/candidate-venv/bin/python" -m zipfile -e "$RUNNER_TEMP/candidate-evidence/Radar-Quantum-Bench-Candidata.zip" "$RUNNER_TEMP/candidate-extracted"
+      - name: Ensaiar o pacote extraído e a restauração
+        run: |
+          "$RUNNER_TEMP/candidate-venv/bin/python" "$RUNNER_TEMP/candidate-extracted/tools/verify_candidate.py" --output "$RUNNER_TEMP/candidate-evidence/candidate-result.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: candidata-revisao-e-evidencias
+          path: ${{ runner.temp }}/candidate-evidence
+          retention-days: 14
