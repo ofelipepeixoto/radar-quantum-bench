@@ -156,7 +156,7 @@ function configure() {
     seedInput.placeholder = String(spec.base_seed);
     const support = spec.words.filter(word => spec.ideal[word]! > 0);
     const predicted = support.map(word => `${word} (${percent(spec.ideal[word]!)})`).join(" e ");
-    const description = `Distribuição ideal: ${predicted}. O circuito mede ${spec.measured} de ${spec.qubits} qubits.`;
+    const description = `Na distribuição ideal, os resultados esperados são ${predicted}. O circuito mede ${spec.measured} de ${spec.qubits} qubits.`;
     const target = byId("experiment-description");
     if (target.textContent !== description) target.textContent = description;
   }
