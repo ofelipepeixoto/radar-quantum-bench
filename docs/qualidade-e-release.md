@@ -1,6 +1,6 @@
 # Qualidade e liberação do piloto
 
-Este documento define o que a equipe deverá demonstrar para liberar o Radar Quantum Bench. O repositório está na etapa de planejamento. Cada critério abaixo deverá receber um resultado, a versão avaliada e um link para a evidência quando houver implementação.
+Este documento define o que a equipe deverá demonstrar para liberar o Radar Quantum Bench. O núcleo local já inclui os três circuitos, API, interface e relatório com evidências. O [registro do relator](marco-relatorios.md) descreve o que foi testado nesta entrega. Os critérios abaixo também incluem verificações do piloto ainda pendentes. Cada critério deverá receber um resultado, a versão avaliada e um link para a evidência correspondente.
 
 ## Limites da simulação
 

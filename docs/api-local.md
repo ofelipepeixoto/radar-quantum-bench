@@ -8,7 +8,7 @@ Na raiz do repositório, crie e ative um ambiente Python 3.12 em Linux x86_64 ou
 
 Inicie `python -m radar_quantum_bench.local serve --data-dir local-data`. Em outro terminal, com o mesmo ambiente, execute `python -m radar_quantum_bench.local worker --data-dir local-data`. O endereço HTTP é 127.0.0.1 e a porta padrão é 8000. O parâmetro `--port` altera a porta da API. O worker aceita `--once` para processar no máximo um trabalho e encerrar.
 
-A API conserva a especificação em `/openapi.json`. As páginas que carregariam JavaScript de terceiros estão desabilitadas. O serviço não realiza chamadas a modelos de IA ou provedores de hardware. A execução de simulação e os dados permanecem no ambiente local. Cada ensaio mantém 1.024 medições por repetição e dez repetições por condição.
+A API conserva a especificação em `/openapi.json`. As páginas que carregariam JavaScript de terceiros estão desabilitadas. Por padrão, o serviço usa o resumo determinístico e o simulador local. O parâmetro opcional `--report-model` habilita consultas explícitas ao Ollama em loopback. A configuração e os limites estão no [guia do relator](relatorios-locais.md). Cada ensaio mantém 1.024 medições por repetição e dez repetições por condição.
 
 ## Rotas implementadas
 
@@ -22,8 +22,13 @@ A API conserva a especificação em `/openapi.json`. As páginas que carregariam
 | GET /api/v1/comparacoes/{id}/metricas | Resumo das medições disponíveis, inclusive quando o ensaio estiver incompleto |
 | POST /api/v1/comparacoes/{id}/retentativas | Devolve um trabalho com falha à fila. A próxima execução preserva os checkpoints válidos. |
 | GET /api/v1/comparacoes/{id}/exportacao | ZIP científico com código, testes, versões, medições e guia. Exige conclusão do trabalho e do resultado. |
+| GET /api/v1/relator | Indica se a instalação habilitou o modelo opcional. Não consulta o modelo. |
+| GET /api/v1/comparacoes/{id}/relatorio | Relatório com fatos e evidências do checkpoint disponível. Não consulta o modelo. |
+| POST /api/v1/comparacoes/{id}/relatorio | Solicita a organização pelo modelo habilitado. Exige conclusão. Reutiliza uma seleção já aprovada para os mesmos dados e modelo. |
+| GET /api/v1/comparacoes/{id}/relatorio.md | Download da explicação em Markdown com evidências e identificação da origem |
+| GET /api/v1/comparacoes/{id}/relatorio.json | Download do relatório estruturado com os mesmos fatos e texto |
 
-Os dois POSTs exigem `Idempotency-Key`, de um a 128 caracteres, sem espaços. O corpo de criação admite `{"circuit":"bell"}`, `ghz` ou `bv`, e opcionalmente `base_seed`, inteiro de 0 a 4294967295. Campos adicionais e valores inválidos devolvem 422. As sementes padrão são 20261120, 20261220 e 20261320 respectivamente.
+Os POSTs de criação e retentativa exigem `Idempotency-Key`, de um a 128 caracteres, sem espaços. O corpo de criação admite `{"circuit":"bell"}`, `ghz` ou `bv`, e opcionalmente `base_seed`, inteiro de 0 a 4294967295. Campos adicionais e valores inválidos devolvem 422. As sementes padrão são 20261120, 20261220 e 20261320 respectivamente. O POST do relator dispensa corpo e chave e não cria experimentos. Uma consulta de IA em andamento recusa outra com 429. A leitura e o ZIP continuam disponíveis.
 
 Reenviar a mesma chave e a mesma configuração devolve o ID original, inclusive com a fila cheia. Usar a mesma chave para parâmetros diferentes devolve 409. Uma chave de retentativa pertence ao trabalho correspondente. Repeti-la devolve o estado atual daquele trabalho. Uma nova chave de retentativa exige estado `failed`. O arquivo JSON do experimento preserva as tentativas de medição. O SQLite preserva as tentativas do executor de assumir o trabalho.
 
@@ -54,7 +59,7 @@ A API confere circuito e semente do JSON contra a configuração no SQLite. Ao c
 
 ## Cópia, restauração e atualização
 
-Para esta primeira edição, pare a API e o executor antes de copiar todo o diretório de dados. Preserve `jobs.sqlite3`, os arquivos auxiliares que ainda existirem e a pasta `results`. Armazene a cópia em destino privado do laboratório. O lock é liberado pelo sistema operacional. Preserve o arquivo `worker.lock` no diretório e evite removê-lo durante a operação.
+Para esta primeira edição, pare a API e o executor antes de copiar todo o diretório de dados. Preserve `jobs.sqlite3`, os arquivos auxiliares que ainda existirem e as pastas `results` e `reports`. Armazene a cópia em destino privado do laboratório. O lock é liberado pelo sistema operacional. Preserve o arquivo `worker.lock` no diretório e evite removê-lo durante a operação.
 
 Restaure a cópia em outra pasta. Inicie a API com essa pasta e consulte uma comparação conhecida. Confira o JSON, a configuração, as contagens e o hash. Depois inicie o executor. Um ensaio local desta entrega confirmou o histórico e o resultado após essa restauração. Uma cópia feita enquanto houver escrita exige um procedimento consistente que também cubra os arquivos de resultados. O SQLite oferece uma API própria de backup para o banco. [Documentação SQLite](https://www.sqlite.org/backup.html)
 

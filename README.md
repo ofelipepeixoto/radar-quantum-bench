@@ -98,6 +98,8 @@ A resposta traz o `id` da comparação. Use-o nas rotas de consulta, métricas e
 
 ## Abrir a interface em português
 
+Para instalar e testar no seu PC, siga o [passo a passo do terminal WSL](docs/testar-no-wsl.md). O guia cobre Python 3.12, build da página, os dois terminais de operação e a retomada com o histórico preservado.
+
 Com as dependências Python da API instaladas, compile a página na pasta web e inicie novamente o servidor. Use Node 22.23.4 ou posterior.
 
 ```bash
@@ -110,13 +112,17 @@ python -m radar_quantum_bench.local serve --data-dir local-data
 
 Mantenha o executor ativo em outro terminal e abra **http://127.0.0.1:8000**. A bancada permite escolher o circuito, acompanhar as duas condições, comparar as distribuições e baixar o ZIP. O endereço guarda o ID para reabrir a mesma comparação após recarregar. [Guia da interface](docs/interface-local.md) · [Verificação deste marco](docs/marco-interface.md)
 
+Ao concluir uma comparação, **Leitura dos resultados** apresenta um resumo em português. Cada observação aponta para fatos com contagens, unidades e origem no JSON. É possível baixar a explicação em Markdown e JSON. O resumo funciona sem modelo de IA. Uma instalação com Ollama pode habilitar a seleção de observações por um modelo local, somente após um clique. O servidor valida a seleção e preserva o resumo local se a consulta falhar. [Operar o relator](docs/relatorios-locais.md) · [Verificação deste marco](docs/marco-relatorios.md)
+
 ## Documentação
 
 | Para quem quer | Documento |
 | --- | --- |
+| Instalar, testar e reabrir a bancada no terminal do PC | [Passo a passo para WSL](docs/testar-no-wsl.md) |
 | Entender o produto, as entregas, a equipe e o custo | [Plano do MVP](docs/plano-do-mvp.md) |
 | Implementar e validar Bell, GHZ e Bernstein-Vazirani | [Protocolo científico](docs/protocolo-cientifico.md) |
 | Executar e conferir uma comparação pelo navegador | [Interface em português](docs/interface-local.md) |
+| Conferir a explicação e habilitar um modelo local opcional | [Relatórios com evidências](docs/relatorios-locais.md) |
 | Iniciar a API local, executar a fila e recuperar o histórico | [Operação da API](docs/api-local.md) |
 | Definir API, fila, dados e pacote de reprodução | [Arquitetura e contratos](docs/arquitetura.md) |
 | Escolher bibliotecas, repositórios, APIs e sites oficiais | [Guia de integrações quânticas](docs/integracoes.md) |
@@ -126,7 +132,7 @@ Mantenha o executor ativo em outro terminal e abra **http://127.0.0.1:8000**. A 
 | Proteger componentes privados e definir o que bloqueia a publicação | [Proteção do produto](docs/protecao-do-produto.md) |
 | Verificar os relatórios de IA e preparar a primeira versão | [Qualidade e liberação](docs/qualidade-e-release.md) |
 
-As três comparações já rodam localmente. O próximo marco integra a execução a uma API local com fila, histórico e exportação. A conexão física prevista é a IBM Quantum após a validação do piloto.
+As três comparações, a API, a interface e o relatório com evidências já rodam localmente. O próximo marco prepara a versão candidata e o aceite do piloto. As sessões com participantes e a conexão física IBM Quantum seguem os critérios registrados no plano.
 
 ## Começar o trabalho
 

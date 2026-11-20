@@ -15,6 +15,20 @@ interface Job {
   id: string; circuit: Circuit; base_seed: number; status: Status; created_at: string;
   progress?: Summary | null; attempts: {error_code: string | null}[];
 }
+interface ReportEntry { frase_id: string; fato_ids: string[]; texto: string }
+interface ReportFact {
+  id: string; valor: unknown; unidade: string; condicao: string | null;
+  precisao: number | null; origem: string;
+}
+interface EvidenceReport {
+  schema_version: string; prompt_revision: string; estado: "completo" | "parcial" | "inconclusivo";
+  origem_texto: "deterministico" | "modelo_local"; fallback_reason: string | null;
+  modelo: string | null; job_id: string; run_id: string; result_sha256: string;
+  modelo_versao?: {name: string; digest: string; server_version: string} | null;
+  resumo: ReportEntry; observacoes: ReportEntry[]; limitacoes: ReportEntry[];
+  proximo_teste: ReportEntry | null; fatos: ReportFact[];
+}
+interface Reporter { modelo_local: boolean; modelo: string | null }
 type Pending =
   | {kind: "create"; key: string; circuit: Circuit; seed: number | null}
   | {kind: "retry"; key: string; id: string};
@@ -58,9 +72,9 @@ class HttpError extends Error {
     } as Record<number, string>)[code] ?? `A API devolveu o erro ${code}. Tente novamente.`);
   }
 }
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, postStatus = 202): Promise<T> {
   const res = await fetch(api + path, {cache: "no-store", ...options});
-  if (!res.ok || (options.method === "POST" && res.status !== 202)) throw new HttpError(res.status);
+  if (!res.ok || (options.method === "POST" && res.status !== postStatus)) throw new HttpError(res.status);
   return await res.json() as T;
 }
 function explain(err: unknown): string {
@@ -84,6 +98,12 @@ const results = byId("result-panel");
 const historyBody = byId<HTMLTableSectionElement>("history-body");
 const previousPage = byId<HTMLButtonElement>("history-previous");
 const nextPage = byId<HTMLButtonElement>("history-next");
+const reportPanel = byId("report-panel");
+const reportContent = byId("report-content");
+const reportMessage = byId("report-message");
+const reportRetry = byId<HTMLButtonElement>("report-retry");
+const reportModel = byId<HTMLButtonElement>("report-model-button");
+const reportEvidence = byId<HTMLDetailsElement>("report-evidence");
 const pageSize = 20;
 const catalog = new Map<Circuit, Specification>();
 const problems = new Map<string, string>();
@@ -130,6 +150,130 @@ let lastDetail: AbortController | null = null;
 let timer: number | undefined;
 let historyRequest: AbortController | null = null;
 let offset = 0;
+let reporter: Reporter = {modelo_local: false, modelo: null};
+let reportRequest: AbortController | null = null;
+let reportLoadedId: string | null = null;
+let shownReport: EvidenceReport | null = null;
+
+function configureReporter() {
+  reportModel.hidden = !reporter.modelo_local;
+  reportModel.disabled = reportRequest !== null || !shownReport;
+  byId("report-model-help").hidden = !reporter.modelo_local;
+}
+async function loadReporter() {
+  try { reporter = await request<Reporter>("/relator"); }
+  catch { reporter = {modelo_local: false, modelo: null}; }
+  configureReporter();
+}
+function resetReport() {
+  reportRequest?.abort(); reportRequest = null;
+  reportLoadedId = null; shownReport = null;
+  reportPanel.hidden = reportContent.hidden = reportRetry.hidden = true;
+  reportEvidence.open = false;
+  reportMessage.textContent = "";
+  byId("report-origin").textContent = "";
+  for (const id of ["report-download-md", "report-download-json"]) byId(id).removeAttribute("href");
+  configureReporter();
+}
+function factValue(fact: ReportFact): string {
+  const precision = typeof fact.precisao === "number" ? Math.max(0, Math.min(12, fact.precisao)) : 6;
+  const format = new Intl.NumberFormat("pt-BR", {maximumFractionDigits: precision});
+  const value = fact.valor;
+  if (value === null) return absent;
+  if (typeof value === "number") return format.format(value);
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(item => typeof item === "number" ? format.format(item) : String(item)).join(" a ");
+  return JSON.stringify(value);
+}
+function reportEntry(entry: ReportEntry, facts: Map<string, number>) {
+  const content = document.createDocumentFragment();
+  content.append(make("span", entry.texto));
+  const refs = make("span"); refs.className = "report-refs";
+  for (const factId of entry.fato_ids) {
+    const index = facts.get(factId);
+    if (index === undefined) continue;
+    const link = make("a", `[${index + 1}]`);
+    link.setAttribute("aria-label", `[${index + 1}] Conferir evidência ${factId}`);
+    link.href = `#report-fact-${index}`;
+    link.addEventListener("click", () => { reportEvidence.open = true; });
+    refs.append(link);
+  }
+  content.append(refs);
+  return content;
+}
+function paintReport(report: EvidenceReport) {
+  shownReport = report;
+  const factIndices = new Map(report.fatos.map((fact, index) => [fact.id, index]));
+  byId("report-origin").textContent = report.origem_texto === "modelo_local" ? "Organizado por IA local" : "Resumo local";
+  byId("report-summary").replaceChildren(reportEntry(report.resumo, factIndices));
+  for (const [id, entries] of [["report-observations", report.observacoes], ["report-limitations", report.limitacoes]] as const) {
+    byId(id).replaceChildren(...entries.map(entry => {
+      const li = make("li"); li.append(reportEntry(entry, factIndices)); return li;
+    }));
+  }
+  const next = byId("report-next");
+  next.hidden = report.proximo_teste === null;
+  next.replaceChildren();
+  if (report.proximo_teste) {
+    next.append(reportEntry(report.proximo_teste, factIndices));
+  }
+  byId("report-facts").replaceChildren(...report.fatos.map((fact, index) => {
+    const tr = row([fact.id, factValue(fact), fact.unidade, fact.condicao ? (conditions[fact.condicao as Condition] ?? fact.condicao) : "Comparação", fact.origem]);
+    tr.id = `report-fact-${index}`; return tr;
+  }));
+  const model = report.modelo ? ` · Modelo ${report.modelo}` : "";
+  const revision = report.modelo_versao ? ` · Digest do modelo informado pelo Ollama ${report.modelo_versao.digest} · Ollama ${report.modelo_versao.server_version}` : "";
+  byId("report-provenance").textContent = `Execução ${report.run_id} · SHA-256 dos dados ${report.result_sha256} · Esquema ${report.schema_version} · Instruções ${report.prompt_revision}${model}${revision}`;
+  for (const [id, extension] of [["report-download-md", "md"], ["report-download-json", "json"]] as const) {
+    const link = byId<HTMLAnchorElement>(id);
+    link.href = `${api}/comparacoes/${report.job_id}/relatorio.${extension}`;
+    link.download = `Radar-Quantum-Bench-Relatorio-${report.job_id}.${extension}`;
+  }
+  reportContent.hidden = false;
+  const fallbackMessages: Record<string, string> = {
+    registro_invalido: "O registro anterior não pôde ser validado. O resumo local está disponível.",
+    tempo_esgotado: "A consulta à IA local excedeu o prazo. O resumo local está disponível.",
+    modelo_desativado: "A IA local está desativada. O resumo local está disponível.",
+  };
+  reportMessage.textContent = report.fallback_reason ? (fallbackMessages[report.fallback_reason] ?? "A IA local não produziu uma seleção válida. O resumo local está disponível.") : "";
+  configureReporter();
+}
+function isReport(value: EvidenceReport, id: string): boolean {
+  const entry = (item: ReportEntry | null) => item !== null && typeof item?.texto === "string" &&
+    typeof item.frase_id === "string" && Array.isArray(item.fato_ids) && item.fato_ids.every(fact => typeof fact === "string");
+  return value?.job_id === id && typeof value.run_id === "string" && /^[0-9a-f]{64}$/.test(value.result_sha256) &&
+    entry(value.resumo) && Array.isArray(value.observacoes) && value.observacoes.every(entry) &&
+    Array.isArray(value.limitacoes) && value.limitacoes.every(entry) &&
+    (value.proximo_teste === null || entry(value.proximo_teste)) && Array.isArray(value.fatos) &&
+    value.fatos.every(fact => typeof fact?.id === "string" && typeof fact.unidade === "string" && typeof fact.origem === "string");
+}
+async function loadReport(withModel = false) {
+  const job = current;
+  if (!job || selected !== job.id || job.status !== "completed" || !job.progress?.complete || reportRequest) return;
+  const id = job.id;
+  const epoch = viewEpoch;
+  const controller = new AbortController(); reportRequest = controller;
+  reportLoadedId = id; reportPanel.hidden = false; reportRetry.hidden = true;
+  reportMessage.textContent = withModel ? "A IA local está organizando as observações…" : "Lendo as evidências do experimento…";
+  configureReporter();
+  try {
+    const report = await request<EvidenceReport>(`/comparacoes/${id}/relatorio`, {
+      method: withModel ? "POST" : "GET", signal: controller.signal,
+    }, 200);
+    if (controller.signal.aborted || selected !== id || epoch !== viewEpoch) return;
+    if (!isReport(report, id)) throw new Error("Resposta do relator inválida");
+    paintReport(report);
+  } catch (err) {
+    if (controller.signal.aborted || selected !== id || epoch !== viewEpoch) return;
+    const preserved = shownReport ? " O relatório já exibido continua disponível." : " As métricas e o pacote ZIP continuam disponíveis.";
+    const reason = err instanceof HttpError && err.code === 429 ? "O relator está ocupado. Tente novamente em instantes." : explain(err);
+    reportMessage.textContent = `Não foi possível ler a explicação. ${reason}${preserved}`;
+    reportRetry.hidden = false;
+  } finally {
+    if (reportRequest === controller) { reportRequest = null; configureReporter(); }
+  }
+}
 
 function setPending(value: Pending | null) {
   pending = value;
@@ -313,6 +457,8 @@ function paint(job: Job) {
   if (complete) {
     download.href = `${api}/comparacoes/${job.id}/exportacao`;
     download.download = `Radar-Quantum-Bench-${job.circuit.toUpperCase()}.zip`;
+    reportPanel.hidden = false;
+    if (reportLoadedId !== job.id) void loadReport();
   } else download.removeAttribute("href");
   historyStatus(job); configure();
 }
@@ -340,10 +486,11 @@ async function refreshDetail() {
     download.hidden = true; download.removeAttribute("href");
     retry.hidden = repeat.hidden = newSeed.hidden = true;
     results.hidden = true;
+    resetReport();
   } finally { if (lastDetail === controller) lastDetail = null; }
 }
 function openJob(id: string | null, push = false, focus = false) {
-  viewEpoch++; cancelDetail();
+  viewEpoch++; cancelDetail(); resetReport();
   selected = id; current = null;
   problems.delete("detail");
   paintConnection();
@@ -431,6 +578,10 @@ function repeatComparison(changeSeed: boolean) {
 }
 repeat.addEventListener("click", () => repeatComparison(false));
 newSeed.addEventListener("click", () => repeatComparison(true));
+reportRetry.addEventListener("click", () => { void loadReport(); });
+reportModel.addEventListener("click", () => {
+  if (reporter.modelo_local) void loadReport(true);
+});
 historyBody.addEventListener("click", event => {
   const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-comparison-id]") : null;
   if (target?.dataset.comparisonId) openJob(target.dataset.comparisonId, true, true);
@@ -455,4 +606,5 @@ if (pending) {
 configure();
 void loadCatalog();
 void loadHistory();
+void loadReporter();
 openJob(new URL(location.href).searchParams.get("comparacao"));

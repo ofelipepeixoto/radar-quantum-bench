@@ -4,6 +4,8 @@ A interface Astro usa a API e o executor já instalados no computador do laborat
 
 ## Preparar a interface
 
+No Windows, siga o [passo a passo completo para WSL](testar-no-wsl.md) para preparar o Python e abrir os dois terminais.
+
 Na raiz do repositório, ative o ambiente Python 3.12 e instale as dependências da API. Para compilar a interface, use Node 22.23.4 ou posterior e npm 9.6.5 ou posterior. A entrega foi verificada com Node 24.22.3 e npm 11.19.1. A instalação inicial requer acesso aos pacotes. Depois do build, a página pode usar os arquivos locais.
 
 ```bash
@@ -34,6 +36,8 @@ Quando as duas condições estiverem completas, confira as métricas e as contag
 
 Baixar pacote ZIP entrega o mesmo pacote científico da API. Repetir configuração cria outro trabalho com a mesma semente. Testar outra semente cria outro trabalho com uma semente diferente. O trabalho original continua no histórico.
 
+**Leitura dos resultados** explica a comparação em português e inclui links para os fatos que sustentam cada observação. Abra **Conferir as evidências** para ver valores, unidades, origem e hash. Os botões Markdown e JSON baixam o mesmo relatório exibido. O resumo local dispensa IA. O [guia do relator](relatorios-locais.md) descreve a opção de organizar as observações com um modelo local.
+
 ## Interrupções e recusas
 
 Se uma resposta de envio se perder, a tela conserva a chave e os parâmetros na aba do navegador. Confirmar envio anterior consulta o mesmo pedido por reenvio idempotente. A reconexão de leitura atualiza o catálogo, o histórico ou a comparação. Uma recusa definitiva da API, como fila cheia ou parâmetros inválidos, libera a configuração para uma tentativa corrigida.
@@ -57,4 +61,4 @@ O executor Python dos testes deve ter `requirements-api.txt` instalado. A variá
 
 A revisão automática de acessibilidade cobre as regras selecionadas WCAG A e AA no catálogo e na comparação, incluindo a largura de 320 pixels. A verificação manual e os testes com leitores de tela e participantes do laboratório ainda fazem parte do piloto. A interface usa rótulos, foco visível, padrões além de cores e tabelas em regiões com rolagem própria.
 
-As fontes Geist e IBM Plex Mono são distribuídas com as respectivas licenças em `web/public/licencas`. O próximo marco do plano é a explicação dos resultados apoiada em evidências, antes do piloto com usuários.
+As fontes Geist e IBM Plex Mono são distribuídas com as respectivas licenças em `web/public/licencas`. A explicação com evidências já foi implementada. O próximo marco prepara o aceite da versão candidata e as sessões do piloto.

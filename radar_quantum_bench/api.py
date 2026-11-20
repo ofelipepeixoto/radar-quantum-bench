@@ -1,6 +1,7 @@
 """API da instalação local, com fila durável e execução em processo separado."""
 
 from hashlib import sha256
+import json
 from pathlib import Path
 import shutil
 import tempfile
@@ -8,15 +9,17 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 from starlette.background import BackgroundTask
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .bundle import build_bundle
-from .experiment import load_result
+from .experiment import _unique_fields, validate
 from .metrics import specifications
+from .report import report_to_markdown
+from .report_service import ReportBusy, Reports
 from .store import Conflict, InvalidState, NotFound, QueueFull, Store
 
 _DEFAULT_SEEDS = {"bell": 20261120, "ghz": 20261220, "bv": 20261320}
@@ -36,11 +39,14 @@ class ComparisonRequest(BaseModel):
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128, pattern=r"^\S+$")]
 
 
-def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None) -> FastAPI:
-    app = FastAPI(title="Radar Quantum Bench · API local", version="0.3.0",
+def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None,
+               advisor=None) -> FastAPI:
+    app = FastAPI(title="Radar Quantum Bench · API local", version="0.5.0",
                   docs_url=None, redoc_url=None)
     store = Store(Path(data_dir), capacity=capacity)
     app.state.store = store
+    reports = Reports(Path(data_dir), advisor=advisor)
+    app.state.reports = reports
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]"])
 
     @app.middleware("http")
@@ -61,31 +67,49 @@ def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None) -
         (Conflict, 409, "A chave já identifica uma configuração diferente."),
         (InvalidState, 409, "Operação incompatível com o estado da comparação."),
         (QueueFull, 429, "A fila atingiu sua capacidade. Tente novamente depois."),
+        (ReportBusy, 429, "O relator já está atendendo outra comparação. Tente depois."),
     ):
         async def handler(request, exception, status=code, message=detail):
             return JSONResponse(status_code=status, content={"detail": message})
         app.add_exception_handler(error, handler)
 
-    def result_document(job_id):
+    def result_snapshot(job_id):
+        job = store.get(job_id)
         path = store.result_path(job_id)
         if not path.exists():
             raise HTTPException(409, "As medições ainda estão pendentes.")
         try:
-            job = store.get(job_id)
-            document = load_result(path)
+            raw = path.read_bytes()
+            document = json.loads(raw, object_pairs_hook=_unique_fields)
+            validate(document)
             config = document["config"]
             if (config["circuit"], config["base_seed"]) != (job["circuit"], job["base_seed"]):
                 raise ValueError("O resultado pertence a outra configuração.")
-            digest = job["result_sha256"]
-            if digest is not None and sha256(path.read_bytes()).hexdigest() != digest:
+            digest = sha256(raw).hexdigest()
+            if job["result_sha256"] is not None and digest != job["result_sha256"]:
                 raise ValueError("O resultado difere do arquivo concluído pelo executor.")
-            return document
+            return document, digest
         except (ValueError, OSError, KeyError, TypeError) as exc:
             raise HTTPException(409, "O resultado requer revisão antes da exportação.") from exc
+
+    def result_document(job_id):
+        return result_snapshot(job_id)[0]
+
+    def current_report(job_id):
+        document, digest = result_snapshot(job_id)
+        try:
+            return reports.read(document, job_id, digest)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise HTTPException(409, "O resultado requer revisão antes de explicar as medições.") from exc
 
     @app.get("/health")
     def health():
         return {"status": "ok", "execution": "local-cpu"}
+
+    @app.get("/api/v1/relator")
+    def report_capabilities():
+        return {"modelo_local": advisor is not None,
+                "modelo": advisor.model if advisor else None}
 
     @app.get("/api/v1/experimentos")
     def experiments():
@@ -121,6 +145,38 @@ def create_app(data_dir: Path, capacity: int = 32, ui_dir: Path | None = None) -
     @app.post("/api/v1/comparacoes/{job_id}/retentativas", status_code=202)
     def retry(job_id: UUID, idempotency_key: IdempotencyKey):
         return store.retry(str(job_id), idempotency_key)
+
+    @app.get("/api/v1/comparacoes/{job_id}/relatorio")
+    def report(job_id: UUID):
+        return current_report(str(job_id))
+
+    @app.post("/api/v1/comparacoes/{job_id}/relatorio")
+    def compose_report(job_id: UUID):
+        job = store.get(str(job_id))
+        document, digest = result_snapshot(str(job_id))
+        if job["status"] != "completed" or not document["summary"]["complete"]:
+            raise HTTPException(409, "A comparação precisa estar concluída para usar o relator.")
+        try:
+            return reports.generate(document, str(job_id), digest)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise HTTPException(409, "O resultado requer revisão antes de explicar as medições.") from exc
+        except OSError as exc:
+            raise HTTPException(503, "Não foi possível guardar o relatório. O resumo local continua disponível.") from exc
+
+    @app.get("/api/v1/comparacoes/{job_id}/relatorio.json")
+    def export_report_json(job_id: UUID):
+        return Response(
+            json.dumps(current_report(str(job_id)), ensure_ascii=False, allow_nan=False, indent=2) + "\n",
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="Radar-Quantum-Relatorio-{job_id}.json"'},
+        )
+
+    @app.get("/api/v1/comparacoes/{job_id}/relatorio.md")
+    def export_report_markdown(job_id: UUID):
+        return Response(
+            report_to_markdown(current_report(str(job_id))), media_type="text/markdown",
+            headers={"Content-Disposition": f'attachment; filename="Radar-Quantum-Relatorio-{job_id}.md"'},
+        )
 
     @app.get("/api/v1/comparacoes/{job_id}/exportacao")
     def export(job_id: UUID):

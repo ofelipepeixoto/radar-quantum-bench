@@ -156,6 +156,39 @@ const experiments = [
                 <tbody id="counts-body"></tbody>
               </table>
             </div>
+            <section id="report-panel" class="report-panel" aria-labelledby="report-heading" hidden>
+              <div class="section-head">
+                <h3 id="report-heading">Leitura dos resultados</h3>
+                <span id="report-origin" class="state-chip"></span>
+              </div>
+              <p id="report-message" class="status-message" role="status"></p>
+              <div id="report-content" hidden>
+                <div id="report-summary" class="report-summary"></div>
+                <ul id="report-observations" class="report-copy"></ul>
+                <h4>Limites desta comparação</h4>
+                <ul id="report-limitations" class="report-copy"></ul>
+                <div id="report-next" class="report-next" hidden></div>
+                <details id="report-evidence" class="report-evidence">
+                  <summary>Conferir as evidências</summary>
+                  <p id="report-provenance" class="report-provenance"></p>
+                  <div class="table-scroll" role="region" aria-label="Fatos usados na explicação" tabindex="0">
+                    <table class="report-facts-table">
+                      <thead><tr><th scope="col">Evidência</th><th scope="col">Valor</th><th scope="col">Unidade</th><th scope="col">Condição</th><th scope="col">Origem nos dados</th></tr></thead>
+                      <tbody id="report-facts"></tbody>
+                    </table>
+                  </div>
+                </details>
+                <div class="result-actions report-downloads">
+                  <a id="report-download-md" class="button secondary compact">Baixar relatório Markdown</a>
+                  <a id="report-download-json" class="button secondary compact">Baixar relatório JSON</a>
+                </div>
+              </div>
+              <div class="result-actions">
+                <button id="report-retry" class="button secondary compact" type="button" hidden>Tentar ler relatório</button>
+                <button id="report-model-button" class="button secondary compact" type="button" hidden>Organizar com IA local</button>
+              </div>
+              <p id="report-model-help" class="status-message" hidden>A IA local seleciona a ordem das observações permitidas. Os números e as frases são preenchidos e conferidos pela bancada.</p>
+            </section>
           </div>
           <div class="result-actions">
             <a id="download-link" class="button primary" hidden>Baixar pacote ZIP</a>
