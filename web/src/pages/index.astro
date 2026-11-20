@@ -1,0 +1,191 @@
+---
+import "@fontsource-variable/geist";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "../styles/app.css";
+
+const experiments = [
+  {
+    id: "bell", name: "Bell", size: "2 qubits", wires: 2,
+    question: "Quando os dois bits medidos são iguais?",
+    description: "H no qubit 0, seguido de CX do qubit 0 para o 1. Ambos são medidos. Os resultados ideais são 00 e 11, com 50% de probabilidade cada.",
+    rows: [["H", "•", "M"], ["", "⊕", "M"]], links: [[2, 1, 2]],
+  },
+  {
+    id: "ghz", name: "GHZ", size: "3 qubits", wires: 3,
+    question: "Com que frequência os três bits concordam?",
+    description: "H no qubit 0, CX do qubit 0 para o 1 e do qubit 1 para o 2. Os três são medidos. Os resultados ideais são 000 e 111, com 50% de probabilidade cada.",
+    rows: [["H", "•", "", "M"], ["", "⊕", "•", "M"], ["", "", "⊕", "M"]],
+    links: [[2, 1, 2], [3, 2, 3]],
+  },
+  {
+    id: "bv", name: "Bernstein-Vazirani", size: "4 qubits", wires: 4,
+    question: "Quantas vezes a medição recupera o segredo 110?",
+    description: "O circuito prepara o qubit auxiliar 3 e consulta o oráculo com controles nos qubits 1 e 2. Mede apenas os qubits 0, 1 e 2. Na ordem c2c1c0, o resultado ideal é 110.",
+    rows: [["", "H", "", "", "H", "M"], ["", "H", "•", "", "H", "M"], ["", "H", "", "•", "H", "M"], ["X", "H", "⊕", "⊕", "", ""]],
+    links: [[3, 2, 4], [4, 3, 4]],
+  },
+];
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10262d" />
+    <title>Laboratório de circuitos | Radar Quantum Bench</title>
+    <meta name="description" content="Execute circuitos em condições ideais e com ruído, compare as medições e exporte os dados para reprodução." />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Ir para o conteúdo</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Barra do laboratório">
+        <a class="brand" href="#main">
+          <span class="brand-symbol" aria-hidden="true"><i></i></span>
+          <span class="brand-text"><strong>Radar</strong> <span>Quantum Bench</span></span>
+        </a>
+        <nav class="navigation" aria-label="Navegação principal">
+          <a href="#main" class="nav-link nav-current"><span class="nav-icon nav-circuit" aria-hidden="true"></span>Laboratório</a>
+          <a href="#historico" class="nav-link"><span class="nav-icon nav-clock" aria-hidden="true"></span>Histórico</a>
+        </nav>
+        <div class="connection">
+          <span class="connection-label">Conexão local</span>
+          <span id="connection-status" role="status" aria-live="polite">Consultando serviço…</span>
+        </div>
+      </aside>
+
+      <main id="main" tabindex="-1" class="workspace">
+        <header class="page-heading">
+          <h1>Laboratório de circuitos</h1>
+          <p>Compare medições ideais e com ruído e leve os dados do experimento para conferência.</p>
+        </header>
+        <noscript>Ative o JavaScript para conectar ao serviço local e executar uma comparação.</noscript>
+        <button type="button" class="button secondary recovery-button" id="network-retry" hidden>Tentar reconectar</button>
+
+        <div class="setup-grid">
+          <section class="panel config-panel" aria-labelledby="config-title">
+            <h2 id="config-title">Configurar comparação</h2>
+            <form id="experiment-form">
+              <fieldset class="experiment-options">
+                <legend>Escolha um circuito</legend>
+                {experiments.map((exp) => (
+                  <label class="experiment-option">
+                    <input type="radio" name="circuit" value={exp.id} checked={exp.id === "bell"} />
+                    <span class="option-copy"><strong>{exp.name}</strong><span>{exp.question}</span></span>
+                    <span class="option-size">{exp.size}</span>
+                  </label>
+                ))}
+              </fieldset>
+              <details class="advanced">
+                <summary>Opções avançadas</summary>
+                <div class="advanced-fields">
+                  <label for="seed">Semente da simulação <span>(opcional)</span></label>
+                  <input id="seed" name="seed" type="number" min="0" max="4294967295" step="1" inputmode="numeric" aria-describedby="seed-help" />
+                  <p id="seed-help">De 0 a 4.294.967.295. Em branco, usa a semente padrão do circuito.</p>
+                </div>
+              </details>
+              <div class="form-actions">
+                <button id="submit-button" class="button primary" type="submit">Executar comparação<span class="play" aria-hidden="true"></span></button>
+              </div>
+              <p id="form-message" class="status-message" role="status"></p>
+            </form>
+          </section>
+
+          <section class="preview-panel" aria-labelledby="preview-title">
+            <h2 id="preview-title">Prévia do circuito</h2>
+            {experiments.map((exp) => (
+              <figure class={`circuit-preview preview-${exp.id}`}>
+                <figcaption>{exp.name}</figcaption>
+                <div class="wire-diagram" role="img" aria-label={exp.description} style={`--steps:${exp.rows[0].length};--wires:${exp.wires}`}>
+                  {exp.rows.map((row, index) => (
+                    <>
+                      <span class="wire-label" aria-hidden="true" style={`grid-row:${index + 1};grid-column:1`}>q<sub>{index}</sub></span>
+                      <span class="wire" aria-hidden="true" style={`grid-row:${index + 1};grid-column:2 / -1`}></span>
+                      {row.map((gate, step) => gate && (
+                        <span class:list={["gate", { control: gate === "•", target: gate === "⊕", measure: gate === "M" }]}
+                          aria-hidden="true" style={`grid-row:${index + 1};grid-column:${step + 2}`}>{gate}</span>
+                      ))}
+                    </>
+                  ))}
+                  {exp.links.map(([step, from, to]) => (
+                    <span class="coupler" aria-hidden="true" style={`grid-column:${step + 1};grid-row:${from} / ${to + 1}`}></span>
+                  ))}
+                </div>
+              </figure>
+            ))}
+            <p id="experiment-description">O circuito ideal produz 00 ou 11 com a mesma probabilidade. A comparação mostra o que muda com o erro de leitura.</p>
+            <dl class="settings-strip">
+              <div><dt>Medições por repetição</dt><dd>1.024</dd></div>
+              <div><dt>Repetições por condição</dt><dd>10</dd></div>
+              <div><dt>Erro de leitura por bit¹</dt><dd>2%</dd></div>
+            </dl>
+            <p class="noise-note">¹ Apenas na condição com ruído.</p>
+          </section>
+        </div>
+
+        <section id="comparison" class="panel result-section" hidden aria-labelledby="comparison-title">
+          <div class="section-head">
+            <h2 id="comparison-title" tabindex="-1">Comparação</h2>
+            <span id="job-state" class="state-chip"></span>
+          </div>
+          <p class="job-reference">Identificador <code id="job-id"></code><span id="job-seed"></span></p>
+          <p id="comparison-message" class="status-message" aria-live="polite"></p>
+          <div id="conditions"></div>
+          <button type="button" class="button secondary" id="retry-button" hidden>Repetir tentativa</button>
+          <div id="result-panel" hidden>
+            <h3 id="metrics-heading">Métricas da comparação</h3>
+            <div class="table-scroll" role="region" aria-labelledby="metrics-heading" tabindex="0">
+              <table class="numeric-table">
+                <thead><tr><th scope="col">Condição</th><th scope="col">Resultados esperados</th><th scope="col">IC de Wilson 95%</th><th scope="col"><abbr title="Distância de variação total">TVD</abbr> frente à teoria ideal</th><th scope="col">Tempo mediano (ms)</th></tr></thead>
+                <tbody id="metrics-body"></tbody>
+              </table>
+            </div>
+            <p class="status-message">A TVD varia de 0 a 1. Zero indica que a distribuição medida coincide com a teoria ideal.</p>
+            <h3 id="distribution-heading">Distribuição dos resultados</h3>
+            <p class="status-message">Todas as barras usam a mesma escala, de 0% a 100%.</p>
+            <ul class="chart-legend" aria-label="Legenda do gráfico">
+              <li><i class="legend-theory" aria-hidden="true"></i>Teoria ideal</li>
+              <li><i class="legend-ideal" aria-hidden="true"></i>Ideal medido</li>
+              <li><i class="legend-noisy" aria-hidden="true"></i>Com ruído</li>
+            </ul>
+            <div id="distribution-chart" aria-hidden="true"></div>
+            <h3 id="counts-heading">Contagens por resultado</h3>
+            <div class="table-scroll" role="region" aria-labelledby="counts-heading" tabindex="0">
+              <table class="numeric-table">
+                <thead><tr><th scope="col">Resultado</th><th scope="col">Teoria ideal (%)</th><th scope="col">Contagem ideal</th><th scope="col">Ideal (%)</th><th scope="col">Contagem com ruído</th><th scope="col">Com ruído (%)</th></tr></thead>
+                <tbody id="counts-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="result-actions">
+            <a id="download-link" class="button primary" hidden>Baixar pacote ZIP</a>
+            <button id="repeat-button" class="button secondary" type="button" hidden>Repetir configuração</button>
+            <button id="new-seed-button" class="button secondary" type="button" hidden>Testar outra semente</button>
+          </div>
+        </section>
+
+        <section id="historico" class="panel history-panel" aria-labelledby="history-heading">
+          <div class="section-head">
+            <h2 id="history-heading">Histórico de comparações</h2>
+            <button id="refresh-history" class="button secondary compact" type="button">Atualizar</button>
+          </div>
+          <div class="table-scroll" role="region" aria-labelledby="history-heading" tabindex="0">
+            <table class="history-table">
+              <thead><tr><th scope="col">Experimento</th><th scope="col">Estado</th><th scope="col">Criada em</th><th scope="col">Ação</th></tr></thead>
+              <tbody id="history-body"></tbody>
+            </table>
+          </div>
+          <p id="history-empty" class="empty-history">As comparações executadas aparecerão aqui.</p>
+          <div class="pagination">
+            <span id="history-page" aria-live="polite">Página 1</span>
+            <button id="history-previous" class="button secondary compact" type="button" disabled>Anterior</button>
+            <button id="history-next" class="button secondary compact" type="button" disabled>Próxima</button>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      import "../scripts/app.ts";
+    </script>
+  </body>
+</html>

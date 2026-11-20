@@ -2,7 +2,7 @@
 
 **Decisão de produto.** Construir primeiro uma bancada local de comparação para professores e laboratórios de computação quântica. A primeira promessa é concreta: um pesquisador roda duas condições, outra pessoa abre o pacote e confere os números sem pedir o notebook original. O tempo para chegar a essa entrega e a capacidade de reproduzi-la vão orientar a decisão comercial.
 
-**Estágio em 20/11/2026.** Bell já foi integrado à branch principal. O catálogo de Bell, GHZ e Bernstein-Vazirani foi implementado e executado localmente, com 61.440 medições avaliadas. A API local, a fila SQLite e a recuperação de trabalhos também foram implementadas. Os marcos seguintes tratam de interface e piloto. [Evidências da API](marco-api.md) Os prazos da tabela são estimativas de trabalho. [Evidências do catálogo](marco-catalogo.md)
+**Estágio em 20/11/2026.** Bell já foi integrado à branch principal. O catálogo de Bell, GHZ e Bernstein-Vazirani foi implementado e executado localmente, com 61.440 medições avaliadas. A API local, a fila SQLite e a recuperação de trabalhos também foram implementadas. A interface Astro em português está conectada à API e foi testada pelo navegador. Os marcos seguintes tratam de explicações apoiadas em evidências e do piloto com usuários. [Operação da interface](interface-local.md) [Evidências da API](marco-api.md) Os prazos da tabela são estimativas de trabalho. [Evidências do catálogo](marco-catalogo.md)
 
 ## Entrega da primeira versão
 
