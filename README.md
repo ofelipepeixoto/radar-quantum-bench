@@ -150,3 +150,7 @@ As três comparações, a API, a interface e o relatório com evidências já ro
 ## Começar o trabalho
 
 A [tarefa do primeiro marco](https://github.com/ofelipepeixoto/radar-quantum-bench/issues/1) descreve o par de execuções de Bell e o que deve ser conferido no arquivo de contagens. A [tarefa de descoberta do ecossistema](https://github.com/ofelipepeixoto/radar-quantum-bench/issues/2) acompanha a escolha da próxima hipótese depois do piloto. O [bloqueio de publicação por exposição de ativos reservados](https://github.com/ofelipepeixoto/radar-quantum-bench/issues/3) tem critérios de implementação e de teste próprios.
+
+## Base de conhecimento e expansão
+
+A [base QaaS e HPC](docs/base-de-conhecimento-qaas-hpc.md) relaciona a proposta fornecida pelo titular aos 12 produtos. O [registro da fonte](knowledge/sources.json) informa origem, 14 páginas e SHA-256. A proposta orienta estudos futuros; a execução atual segue local e gratuita, com a validação com comprador adiada. O documento não altera o contrato científico ou os limites desta versão.

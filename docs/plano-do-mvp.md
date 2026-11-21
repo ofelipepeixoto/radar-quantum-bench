@@ -71,3 +71,7 @@ As escolhas de engenharia estão em [Arquitetura](arquitetura.md). Os fornecedor
 O [plano paralelo dos 12 produtos](ecossistema-quantico.md) registra as oportunidades de expansão, os compradores e a evidência necessária para abrir uma nova frente. As seis semanas acima são dedicadas ao Radar Quantum Bench.
 
 **Proteção da implementação.** Na semana 1, classificar o que será público ou reservado. Na semana 4, verificar o que a interface e a exportação entregam ao navegador. Na semana 5, bloquear a liberação de qualquer pacote que exponha ativo reservado. O responsável pela liberação guarda a evidência do pacote aprovado. [Critérios de proteção do produto](protecao-do-produto.md)
+
+## Direção posterior ao MVP
+
+A [base QaaS e HPC](base-de-conhecimento-qaas-hpc.md) amplia as hipóteses do ecossistema. A progressão parte do Bench em CPU, passa pela operação por laboratório e só avalia recursos híbridos, instalação física ou QPU própria quando houver evidências e decisão específicas. Os prazos do PDF são cenários da fonte, sem alterar os marcos ativos, a política de integrações gratuitas ou o adiamento do piloto com comprador. O plano público mais recente pode evoluir sem atualizar automaticamente a revisão científica fixada pelo consumidor privado.

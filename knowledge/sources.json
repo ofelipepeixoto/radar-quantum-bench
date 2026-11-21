@@ -1,0 +1,16 @@
+{
+  "schema": "rqb-knowledge-sources/1",
+  "sources": [
+    {
+      "id": "user-vision-positioning-01",
+      "title": "1) Visão e posicionamento",
+      "filename": "1) Visão e posicionamento.pdf",
+      "pages": 14,
+      "sha256": "2ee04e640b2a1981d88e92ee02029adddb329d0251ce4102c216dd0f936d5669",
+      "provenance": "user_provided",
+      "received_on": "2026-11-21",
+      "evidence_status": "proposal_not_independently_verified",
+      "public_summary": "docs/base-de-conhecimento-qaas-hpc.md"
+    }
+  ]
+}
